@@ -1,0 +1,16 @@
+# Local secrets (JWT key, Gmail App Password)
+api/appsettings.Development.json
+api/appsettings.*.local.json
+
+# Build output
+api/bin/
+api/obj/
+frontend/dist/
+frontend/node_modules/
+
+# Editor / OS
+.vs/
+.vscode/
+*.user
+.DS_Store
+Thumbs.db
