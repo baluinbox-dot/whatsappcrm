@@ -32,6 +32,7 @@ export default function InboxPage() {
   const [params, setParams] = useSearchParams();
   const filter = params.get("filter") || "";
   const staffId = params.get("staffId") || "";
+  const customerParam = params.get("customer");
 
   const [conversations, setConversations] = useState([]);
   const [staff, setStaff] = useState([]);
@@ -77,6 +78,11 @@ export default function InboxPage() {
     await Promise.all([loadConversations(), loadThread(activeId)]);
     setLoading(false);
   };
+
+  // Opened from the Customers page: /inbox?customer=12
+  useEffect(() => {
+    if (customerParam) setActiveId(Number(customerParam));
+  }, [customerParam]);
 
   useEffect(() => {
     if (isAdmin) StaffService.getAll().then((rows) => setStaff(rows.filter((s) => s.isActive === "T"))).catch(() => {});

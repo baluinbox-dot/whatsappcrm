@@ -197,7 +197,7 @@ export default function CustomersPage() {
                     <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{formatDate(toDate(c.createdAt))}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
-                        <Link to="/inbox" className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-green-600" title="Open inbox"><MessagesSquare className="h-4 w-4" /></Link>
+                        <Link to={`/inbox?customer=${c.customerId}`} className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-green-600" title="Open chat"><MessagesSquare className="h-4 w-4" /></Link>
                         <button onClick={() => openEdit(c)} className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-blue-600" title="Edit"><Pencil className="h-4 w-4" /></button>
                         {isAdmin && (
                           <button onClick={() => setDeleteTarget(c)} className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-red-600" title="Delete"><Trash2 className="h-4 w-4" /></button>
