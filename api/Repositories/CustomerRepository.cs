@@ -10,6 +10,8 @@ public interface ICustomerRepository
     Task<IEnumerable<CustomerRow>> GetAllAsync(int companyId, int? onlyUserId, string? search, string? filter);
     Task<CustomerRow?> GetByIdAsync(int companyId, int customerId);
     Task<CustomerRow?> GetByMobileAsync(int companyId, string mobileNo);
+    Task<CustomerRow?> GetByEmailAsync(int companyId, string email);
+    Task<CustomerRow> CreateFromEmailAsync(int companyId, string email, string? name);
     Task<(CustomerRow? Row, string? Error)> CreateAsync(int companyId, SaveCustomerDto dto);
     Task<(CustomerRow? Row, string? Error)> UpdateAsync(int companyId, int customerId, SaveCustomerDto dto);
     Task<bool> DeleteAsync(int companyId, int customerId);
@@ -55,6 +57,24 @@ public class CustomerRepository : ICustomerRepository
         using var db = _factory.CreateConnection();
         return await db.QuerySingleOrDefaultAsync<CustomerRow>(
             Select + " WHERE c.company_id = @companyId AND c.mobile_no = @mobileNo", new { companyId, mobileNo });
+    }
+
+    // A WhatsApp customer who shared this email is the same person, so the oldest match wins.
+    public async Task<CustomerRow?> GetByEmailAsync(int companyId, string email)
+    {
+        using var db = _factory.CreateConnection();
+        return await db.QueryFirstOrDefaultAsync<CustomerRow>(
+            Select + " WHERE c.company_id = @companyId AND c.email = @email ORDER BY c.customer_id", new { companyId, email });
+    }
+
+    public async Task<CustomerRow> CreateFromEmailAsync(int companyId, string email, string? name)
+    {
+        using var db = _factory.CreateConnection();
+        var id = await db.ExecuteScalarAsync<int>(@"
+            INSERT INTO dbo.wsm_customers (company_id, customer_name, email, chat_state, source)
+            VALUES (@companyId, @name, @email, 'DONE', 'Email');
+            SELECT CAST(SCOPE_IDENTITY() AS INT);", new { companyId, email, name });
+        return (await GetByIdAsync(companyId, id))!;
     }
 
     public async Task<(CustomerRow?, string?)> CreateAsync(int companyId, SaveCustomerDto dto)

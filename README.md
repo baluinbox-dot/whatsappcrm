@@ -1,7 +1,7 @@
 # WhatsApp CRM by iStreams
 
-Multi-company WhatsApp CRM. Each company connects one business WhatsApp number;
-admins see every chat and assign customers to staff, staff reply to their own customers.
+Multi-company WhatsApp + Email CRM. Each company connects one business WhatsApp number and one mailbox;
+admins see every chat and email and assign customers to staff, staff reply to their own customers.
 
 - `api/` — .NET 8 Web API (Dapper, JWT) on http://localhost:5097
 - `frontend/` — React 18 + Vite + Tailwind on http://localhost:5098
@@ -13,6 +13,7 @@ admins see every chat and assign customers to staff, staff reply to their own cu
    - `database/01_schema.sql`
    - `database/02_import_from_pm.sql` (optional; copies the PM system's WhatsApp data as company #1)
    - `database/03_staff_mobile_login.sql` (only for databases created before staff mobile sign-in)
+   - `database/04_email_inbox.sql`
 2. Create `api/appsettings.Development.json` (not committed):
    ```json
    {
@@ -48,3 +49,13 @@ New sign-ups create a company in **Pending** status; a Super Admin approves it b
    (`https://<public-host>/api/whatsapp/webhook/<company-code>`) and the same Verify Token. Subscribe to `messages`.
 3. Make sure the WhatsApp Business Account is subscribed to the app: `POST https://graph.facebook.com/v23.0/{WABA-ID}/subscribed_apps`.
 4. For local testing expose the API with `ngrok http 5097`.
+
+## Connecting Email
+
+1. Email Settings: fill Email Address, Username, Password, IMAP / SMTP servers → Save → Verify Connection.
+   For Gmail turn on 2-Step Verification and use an App Password; IMAP `imap.gmail.com:993`, SMTP `smtp.gmail.com:587`.
+2. The API checks every connected mailbox once a minute. Only mail that arrives **after** Verify Connection is imported.
+3. A new sender is saved as a customer (email ID + name from the From header, source `Email`), unassigned.
+   If a WhatsApp customer already gave that email ID, the email is attached to that same customer.
+4. Admins assign the customer to staff (the same assignment as WhatsApp); staff reply from Email Inbox and the
+   full sent / received history is kept per customer. Replies are threaded under the customer's last email.

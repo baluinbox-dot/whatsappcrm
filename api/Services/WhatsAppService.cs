@@ -169,14 +169,14 @@ public class WhatsAppService : IWhatsAppService
 
     public async Task<(bool, string?)> SendFromStaffAsync(WhatsAppSettings s, CustomerRow customer, string text, int staffId)
     {
-        var (ok, waId, error) = await SendTextAsync(s, customer.MobileNo, text);
+        var (ok, waId, error) = await SendTextAsync(s, customer.MobileNo!, text);
         await _inbox.AddOutboundAsync(s.CompanyId, customer.CustomerId, waId, text, ok, error, staffId, isBot: false);
         return (ok, error);
     }
 
     private async Task BotReplyAsync(WhatsAppSettings s, CustomerRow customer, string text)
     {
-        var (ok, waId, error) = await SendTextAsync(s, customer.MobileNo, text);
+        var (ok, waId, error) = await SendTextAsync(s, customer.MobileNo!, text);
         await _inbox.AddOutboundAsync(s.CompanyId, customer.CustomerId, waId, text, ok, error, null, isBot: true);
     }
 

@@ -74,6 +74,7 @@ public class InboxController : ControllerBase
 
         var customer = await GetAccessibleAsync(customerId);
         if (customer is null) return NotFound();
+        if (string.IsNullOrEmpty(customer.MobileNo)) return BadRequest(new { message = "This customer has no mobile number." });
         if (!WindowOpen(customer))
             return BadRequest(new { message = "The 24-hour reply window has closed. The customer must message you first." });
 

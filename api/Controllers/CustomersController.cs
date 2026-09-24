@@ -28,6 +28,13 @@ public class CustomersController : ControllerBase
         return c is not null && (User.IsAdmin() || c.AssignedTo == User.UserId()) ? c : null;
     }
 
+    private static string? Check(SaveCustomerDto dto)
+    {
+        dto.MobileNo = string.IsNullOrWhiteSpace(dto.MobileNo) ? null : dto.MobileNo.Trim();
+        dto.Email = string.IsNullOrWhiteSpace(dto.Email) ? null : dto.Email.Trim();
+        return dto.MobileNo is null && dto.Email is null ? "Enter a mobile number or an email ID." : null;
+    }
+
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] string? search, [FromQuery] string? filter)
         => Ok(await _repo.GetAllAsync(User.CompanyId(), Scope, search, filter is "unassigned" or "assigned" ? filter : null));
@@ -37,6 +44,7 @@ public class CustomersController : ControllerBase
     public async Task<IActionResult> Create([FromBody] SaveCustomerDto dto)
     {
         if (!ModelState.IsValid) return ValidationProblem(ModelState);
+        if (Check(dto) is { } invalid) return BadRequest(new { message = invalid });
         var (row, error) = await _repo.CreateAsync(User.CompanyId(), dto);
         return error is not null ? Conflict(new { message = error }) : Ok(row);
     }
@@ -45,6 +53,7 @@ public class CustomersController : ControllerBase
     public async Task<IActionResult> Update(int id, [FromBody] SaveCustomerDto dto)
     {
         if (!ModelState.IsValid) return ValidationProblem(ModelState);
+        if (Check(dto) is { } invalid) return BadRequest(new { message = invalid });
         if (await GetAccessibleAsync(id) is null) return NotFound();
         var (row, error) = await _repo.UpdateAsync(User.CompanyId(), id, dto);
         return error is not null ? Conflict(new { message = error }) : Ok(row);

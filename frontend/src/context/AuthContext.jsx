@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { AuthService } from "@/ServiceLayer/AuthService/AuthService";
 import { InboxService } from "@/ServiceLayer/WhatsAppService/WhatsAppService";
+import { EmailService } from "@/ServiceLayer/EmailService/EmailService";
 import { TOKEN_KEY, USER_KEY } from "@/lib/apiClient";
 
 const AuthContext = createContext(null);
@@ -10,10 +11,12 @@ export function AuthProvider({ children }) {
     try { return JSON.parse(localStorage.getItem(USER_KEY)) ?? null; } catch { return null; }
   });
   const [unread, setUnread] = useState(0);
+  const [emailUnread, setEmailUnread] = useState(0);
   const [loading, setLoading] = useState(true);
 
   const refreshUnread = useCallback(async () => {
     try { setUnread(await InboxService.unreadCount()); } catch { setUnread(0); }
+    try { setEmailUnread(await EmailService.unreadCount()); } catch { setEmailUnread(0); }
   }, []);
 
   useEffect(() => {
@@ -40,6 +43,7 @@ export function AuthProvider({ children }) {
     localStorage.removeItem(USER_KEY);
     setUser(null);
     setUnread(0);
+    setEmailUnread(0);
   };
 
   // Keeps the sidebar unread badge current.
@@ -57,11 +61,12 @@ export function AuthProvider({ children }) {
     staffLogin,
     logout,
     unread,
+    emailUnread,
     refreshUnread,
     isAuthenticated: !!user,
     isAdmin: user?.role === "ADMIN",
     isSuperAdmin: user?.isSuperAdmin === "T",
-  }), [user, loading, unread, refreshUnread]);
+  }), [user, loading, unread, emailUnread, refreshUnread]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

@@ -74,6 +74,10 @@ builder.Services.AddScoped<IDashboardRepository, DashboardRepository>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddSingleton<IEmailService, SmtpEmailService>();
 builder.Services.AddHttpClient<IWhatsAppService, WhatsAppService>();
+builder.Services.AddScoped<IEmailSettingsRepository, EmailSettingsRepository>();
+builder.Services.AddScoped<IEmailInboxRepository, EmailInboxRepository>();
+builder.Services.AddScoped<IMailboxService, MailboxService>();
+builder.Services.AddHostedService<EmailPollingService>();
 
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
                      ?? new[] { "http://localhost:5098" };

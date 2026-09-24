@@ -18,4 +18,4 @@ export function dateTime(s) {
   return d ? `${formatDate(d)} ${hhmm(d)}` : "";
 }
 
-export const displayName = (c) => c?.customerName || c?.whatsappName || (c?.mobileNo ? `+${c.mobileNo}` : "");
+export const displayName = (c) => c?.customerName || c?.whatsappName || (c?.mobileNo ? `+${c.mobileNo}` : c?.email || "");

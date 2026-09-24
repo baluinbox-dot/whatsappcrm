@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate, NavLink, useLocation } from "react-router-dom";
 import {
-  LayoutDashboard, MessagesSquare, Contact, Users, NotebookPen, MessageCircle, ShieldAlert, LogOut,
+  LayoutDashboard, MessagesSquare, Contact, Users, NotebookPen, MessageCircle, ShieldAlert, LogOut, Mail, AtSign,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import LoginPage from "@/pages/Auth/LoginPage";
@@ -10,16 +10,20 @@ import CustomersPage from "@/pages/Customers/CustomersPage";
 import StaffPage from "@/pages/Staff/StaffPage";
 import NotesPage from "@/pages/Notes/NotesPage";
 import WhatsAppSettingsPage from "@/pages/WhatsAppSettings/WhatsAppSettingsPage";
+import EmailInboxPage from "@/pages/EmailInbox/EmailInboxPage";
+import EmailSettingsPage from "@/pages/EmailSettings/EmailSettingsPage";
 import SuperAdminPage from "@/pages/SuperAdmin/SuperAdminPage";
 
 // access: "all" | "admin" | "super"
 const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, access: "all" },
   { to: "/inbox", label: "WhatsApp Inbox", icon: MessagesSquare, access: "all" },
+  { to: "/email-inbox", label: "Email Inbox", icon: Mail, access: "all" },
   { to: "/customers", label: "Customers", icon: Contact, access: "all" },
   { to: "/staff", label: "Staff", icon: Users, access: "admin" },
   { to: "/notes", label: "Notes", icon: NotebookPen, access: "all" },
   { to: "/whatsapp-settings", label: "WhatsApp Settings", icon: MessageCircle, access: "admin" },
+  { to: "/email-settings", label: "Email Settings", icon: AtSign, access: "admin" },
   { to: "/superadmin", label: "Super Admin", icon: ShieldAlert, access: "super" },
 ];
 
@@ -47,7 +51,8 @@ function RequireAuth({ access, children }) {
 
 function Sidebar() {
   const auth = useAuth();
-  const { user, logout, unread } = auth;
+  const { user, logout, unread, emailUnread } = auth;
+  const badges = { "/inbox": unread, "/email-inbox": emailUnread };
   const linkClass = ({ isActive }) =>
     `flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
       isActive
@@ -68,9 +73,9 @@ function Sidebar() {
           <NavLink key={n.to} to={n.to} className={linkClass}>
             <n.icon className="h-4 w-4" />
             <span className="flex-1">{n.label}</span>
-            {n.to === "/inbox" && unread > 0 && (
-              <span className="ml-auto rounded-full bg-green-600 px-1.5 py-0.5 text-[10px] font-semibold text-white">
-                {unread > 99 ? "99+" : unread}
+            {badges[n.to] > 0 && (
+              <span className={`ml-auto rounded-full px-1.5 py-0.5 text-[10px] font-semibold text-white ${n.to === "/inbox" ? "bg-green-600" : "bg-blue-600"}`}>
+                {badges[n.to] > 99 ? "99+" : badges[n.to]}
               </span>
             )}
           </NavLink>
@@ -119,10 +124,12 @@ export default function App() {
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="/dashboard" element={page(<DashboardPage />)} />
       <Route path="/inbox" element={page(<InboxPage />)} />
+      <Route path="/email-inbox" element={page(<EmailInboxPage />)} />
       <Route path="/customers" element={page(<CustomersPage />)} />
       <Route path="/staff" element={page(<StaffPage />, "admin")} />
       <Route path="/notes" element={page(<NotesPage />)} />
       <Route path="/whatsapp-settings" element={page(<WhatsAppSettingsPage />, "admin")} />
+      <Route path="/email-settings" element={page(<EmailSettingsPage />, "admin")} />
       <Route path="/superadmin" element={page(<SuperAdminPage />, "super")} />
 
       <Route path="*" element={page(<div className="p-8">Not found</div>)} />

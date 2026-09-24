@@ -178,7 +178,7 @@ public class CustomerRow
 {
     public int CustomerId { get; set; }
     public int CompanyId { get; set; }
-    public string MobileNo { get; set; } = string.Empty;
+    public string? MobileNo { get; set; }
     public string? CustomerName { get; set; }
     public string? Email { get; set; }
     public string? WhatsappName { get; set; }
@@ -190,13 +190,16 @@ public class CustomerRow
     public int UnreadCount { get; set; }
     public DateTime? LastInboundAt { get; set; }
     public DateTime? LastMessageAt { get; set; }
+    public int EmailUnreadCount { get; set; }
+    public DateTime? LastEmailAt { get; set; }
     public DateTime CreatedAt { get; set; }
 }
 
 public class SaveCustomerDto
 {
-    [Required, MaxLength(20), RegularExpression(@"^\d{8,15}$", ErrorMessage = "Mobile number must be 8-15 digits with country code.")]
-    public string MobileNo { get; set; } = string.Empty;
+    // Email-only customers have no mobile; at least one of mobile / email is required.
+    [MaxLength(20), RegularExpression(@"^\d{8,15}$", ErrorMessage = "Mobile number must be 8-15 digits with country code.")]
+    public string? MobileNo { get; set; }
     [MaxLength(150)] public string? CustomerName { get; set; }
     [EmailAddress, MaxLength(150)] public string? Email { get; set; }
 }
@@ -209,7 +212,7 @@ public class AssignDto
 public class ConversationRow
 {
     public int CustomerId { get; set; }
-    public string MobileNo { get; set; } = string.Empty;
+    public string? MobileNo { get; set; }
     public string? CustomerName { get; set; }
     public string? WhatsappName { get; set; }
     public string? Email { get; set; }
@@ -247,6 +250,109 @@ public class AssignmentRow
 public class SendMessageDto
 {
     [Required, MaxLength(4096)] public string Text { get; set; } = string.Empty;
+}
+
+// ---------- Email ----------
+
+public class EmailSettings
+{
+    public int CompanyId { get; set; }
+    public string EmailAddress { get; set; } = string.Empty;
+    public string? FromName { get; set; }
+    public string Username { get; set; } = string.Empty;
+    public string? Password { get; set; }
+    public string ImapHost { get; set; } = string.Empty;
+    public int ImapPort { get; set; } = 993;
+    public string SmtpHost { get; set; } = string.Empty;
+    public int SmtpPort { get; set; } = 587;
+    public string IsVerified { get; set; } = "F";
+    public long? UidValidity { get; set; }
+    public long? LastUid { get; set; }
+    public DateTime? LastCheckedAt { get; set; }
+    public string? LastError { get; set; }
+    public DateTime? UpdatedAt { get; set; }
+}
+
+public class EmailSettingsView
+{
+    public string? EmailAddress { get; set; }
+    public string? FromName { get; set; }
+    public string? Username { get; set; }
+    public string HasPassword { get; set; } = "F";
+    public string? ImapHost { get; set; }
+    public int ImapPort { get; set; } = 993;
+    public string? SmtpHost { get; set; }
+    public int SmtpPort { get; set; } = 587;
+    public string IsVerified { get; set; } = "F";
+    public DateTime? LastCheckedAt { get; set; }
+    public string? LastError { get; set; }
+    public DateTime? UpdatedAt { get; set; }
+
+    public static EmailSettingsView From(EmailSettings? s) => s is null ? new() : new()
+    {
+        EmailAddress = s.EmailAddress,
+        FromName = s.FromName,
+        Username = s.Username,
+        HasPassword = string.IsNullOrEmpty(s.Password) ? "F" : "T",
+        ImapHost = s.ImapHost,
+        ImapPort = s.ImapPort,
+        SmtpHost = s.SmtpHost,
+        SmtpPort = s.SmtpPort,
+        IsVerified = s.IsVerified,
+        LastCheckedAt = s.LastCheckedAt,
+        LastError = s.LastError,
+        UpdatedAt = s.UpdatedAt
+    };
+}
+
+public class SaveEmailSettingsDto
+{
+    [Required, EmailAddress, MaxLength(150)] public string EmailAddress { get; set; } = string.Empty;
+    [MaxLength(150)] public string? FromName { get; set; }
+    [Required, MaxLength(150)] public string Username { get; set; } = string.Empty;
+    // Blank = keep the saved password.
+    [MaxLength(500)] public string? Password { get; set; }
+    [Required, MaxLength(150)] public string ImapHost { get; set; } = string.Empty;
+    [Range(1, 65535)] public int ImapPort { get; set; } = 993;
+    [Required, MaxLength(150)] public string SmtpHost { get; set; } = string.Empty;
+    [Range(1, 65535)] public int SmtpPort { get; set; } = 587;
+}
+
+public class EmailConversationRow
+{
+    public int CustomerId { get; set; }
+    public string? MobileNo { get; set; }
+    public string? CustomerName { get; set; }
+    public string? WhatsappName { get; set; }
+    public string? Email { get; set; }
+    public int? AssignedTo { get; set; }
+    public string? AssignedToName { get; set; }
+    public int EmailUnreadCount { get; set; }
+    public DateTime? LastEmailAt { get; set; }
+    public string? LastSubject { get; set; }
+    public string? LastBody { get; set; }
+    public string? LastDirection { get; set; }
+}
+
+public class EmailRow
+{
+    public int EmailId { get; set; }
+    public string Direction { get; set; } = "IN";
+    public string? MessageId { get; set; }
+    public string? Subject { get; set; }
+    public string? FromAddress { get; set; }
+    public string? ToAddress { get; set; }
+    public string? Body { get; set; }
+    public string Status { get; set; } = string.Empty;
+    public string? ErrorText { get; set; }
+    public string? SentByName { get; set; }
+    public DateTime CreatedAt { get; set; }
+}
+
+public class SendEmailDto
+{
+    [Required, MaxLength(500)] public string Subject { get; set; } = string.Empty;
+    [Required, MaxLength(100000)] public string Body { get; set; } = string.Empty;
 }
 
 // ---------- Notes ----------

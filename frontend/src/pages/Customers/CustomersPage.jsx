@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Contact, Plus, RefreshCw, Search, X, Pencil, Trash2, MessagesSquare } from "lucide-react";
+import { Contact, Plus, RefreshCw, Search, X, Pencil, Trash2, MessagesSquare, Mail } from "lucide-react";
 import { CustomerService } from "@/ServiceLayer/WhatsAppService/WhatsAppService";
 import { StaffService } from "@/ServiceLayer/AuthService/AuthService";
 import { useAuth } from "@/context/AuthContext";
 import { Alerts, DeleteModal, inputCls, labelCls } from "@/components/common/ui";
 import { apiError } from "@/lib/apiClient";
 import { formatDate } from "@/lib/utils";
-import { toDate } from "@/lib/time";
+import { toDate, displayName } from "@/lib/time";
 
 const emptyForm = { mobileNo: "", customerName: "", email: "" };
 
@@ -57,9 +57,10 @@ export default function CustomersPage() {
     e.preventDefault();
     if (saving) return;
     const mobileNo = form.mobileNo.replace(/[^\d]/g, "");
-    if (!mobileNo) { setError("Mobile number is required."); return; }
+    const email = form.email.trim();
+    if (!mobileNo && !email) { setError("Enter a mobile number or an email ID."); return; }
     setSaving(true); setError("");
-    const payload = { mobileNo, customerName: form.customerName.trim() || null, email: form.email.trim() || null };
+    const payload = { mobileNo: mobileNo || null, customerName: form.customerName.trim() || null, email: email || null };
     try {
       if (editId) { await CustomerService.update(editId, payload); setSuccess("Customer updated."); }
       else { await CustomerService.create(payload); setSuccess("Customer added."); }
@@ -73,7 +74,7 @@ export default function CustomersPage() {
     try {
       const updated = await CustomerService.assign(c.customerId, value ? Number(value) : null);
       setRows((rs) => rs.map((r) => (r.customerId === c.customerId ? updated : r)));
-      setSuccess(updated.assignedToName ? `${updated.customerName || "+" + updated.mobileNo} assigned to ${updated.assignedToName}.` : "Customer unassigned.");
+      setSuccess(updated.assignedToName ? `${displayName(updated)} assigned to ${updated.assignedToName}.` : "Customer unassigned.");
     } catch (err) { setError(apiError(err, "Failed to assign customer.")); }
   };
 
@@ -93,7 +94,7 @@ export default function CustomersPage() {
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{isAdmin ? "Customers" : "My Customers"}</h1>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              {isAdmin ? "Everyone who contacted your WhatsApp number" : "Customers assigned to you"}
+              {isAdmin ? "Everyone who contacted you on WhatsApp or email" : "Customers assigned to you"}
             </p>
           </div>
         </div>
@@ -135,7 +136,7 @@ export default function CustomersPage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
-              <label className={labelCls}>Mobile No *</label>
+              <label className={labelCls}>Mobile No</label>
               <input value={form.mobileNo} onChange={set("mobileNo")} className={inputCls} placeholder="With country code, e.g. 919876543210" />
             </div>
             <div>
@@ -177,7 +178,7 @@ export default function CustomersPage() {
                 const st = STATE_LABEL[c.chatState] ?? STATE_LABEL.DONE;
                 return (
                   <tr key={c.customerId} className="border-b border-gray-100 dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
-                    <td className="px-4 py-3 font-mono text-xs text-gray-700 dark:text-gray-300">+{c.mobileNo}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-gray-700 dark:text-gray-300">{c.mobileNo ? `+${c.mobileNo}` : "—"}</td>
                     <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">{c.customerName || "—"}</td>
                     <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{c.email || "—"}</td>
                     <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{c.whatsappName || "—"}</td>
@@ -197,7 +198,12 @@ export default function CustomersPage() {
                     <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{formatDate(toDate(c.createdAt))}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
-                        <Link to={`/inbox?customer=${c.customerId}`} className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-green-600" title="Open chat"><MessagesSquare className="h-4 w-4" /></Link>
+                        {c.mobileNo && (
+                          <Link to={`/inbox?customer=${c.customerId}`} className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-green-600" title="Open chat"><MessagesSquare className="h-4 w-4" /></Link>
+                        )}
+                        {c.email && (
+                          <Link to={`/email-inbox?customer=${c.customerId}`} className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-blue-600" title="Open emails"><Mail className="h-4 w-4" /></Link>
+                        )}
                         <button onClick={() => openEdit(c)} className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-blue-600" title="Edit"><Pencil className="h-4 w-4" /></button>
                         {isAdmin && (
                           <button onClick={() => setDeleteTarget(c)} className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-red-600" title="Delete"><Trash2 className="h-4 w-4" /></button>
@@ -212,7 +218,7 @@ export default function CustomersPage() {
         </div>
       </div>
 
-      <DeleteModal open={!!deleteTarget} name={deleteTarget?.customerName || `+${deleteTarget?.mobileNo}`}
+      <DeleteModal open={!!deleteTarget} name={displayName(deleteTarget)}
         onCancel={() => setDeleteTarget(null)} onConfirm={confirmDelete} />
     </div>
   );
