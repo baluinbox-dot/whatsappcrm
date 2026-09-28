@@ -14,6 +14,9 @@ const emptyForm = { mobileNo: "", customerName: "", email: "" };
 const STATE_LABEL = {
   ASK_NAME: { label: "Waiting for name", cls: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300" },
   ASK_EMAIL: { label: "Waiting for email", cls: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300" },
+  ASK_PURPOSE: { label: "Bot: Buy or Rent?", cls: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300" },
+  ASK_AREA: { label: "Bot: asking area", cls: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300" },
+  ASK_BUDGET: { label: "Bot: asking budget", cls: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300" },
   DONE: { label: "Complete", cls: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300" },
 };
 

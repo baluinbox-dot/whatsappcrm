@@ -21,7 +21,8 @@ public interface ILeadRepository
     Task<IEnumerable<LeadRow>> GetAllAsync(int companyId, int? onlyUserId, LeadFilter f);
     Task<IEnumerable<LeadStatusCount>> StatusCountsAsync(int companyId, int? onlyUserId);
     Task<LeadRow?> GetByIdAsync(int companyId, int leadId);
-    Task<LeadRow?> CreateAsync(int companyId, int customerId, SaveLeadDto dto, int userId);
+    // userId is null when the WhatsApp bot or the mailbox creates the lead.
+    Task<LeadRow?> CreateAsync(int companyId, int customerId, SaveLeadDto dto, int? userId);
     Task<LeadRow?> UpdateAsync(int companyId, int leadId, SaveLeadDto dto);
     Task AssignAsync(int companyId, int leadId, int? toUserId, int byUserId);
     Task SetStatusAsync(int companyId, int leadId, SetLeadStatusDto dto, int userId);
@@ -29,6 +30,8 @@ public interface ILeadRepository
     Task<IEnumerable<TimelineRow>> TimelineAsync(int companyId, int leadId, int customerId);
     Task AddActivityAsync(int companyId, int leadId, AddActivityDto dto, int userId);
     Task<bool> HasOpenLeadAsync(int companyId, int customerId);
+    Task AddSharesAsync(int companyId, int leadId, IEnumerable<PropertyRow> properties, string channel, int userId);
+    Task UpdateFromBotAsync(int leadId, string? communities, string? emirate, decimal? budgetMax, string? requirements);
 }
 
 public class LeadRepository : ILeadRepository
@@ -108,7 +111,7 @@ public class LeadRepository : ILeadRepository
         return p;
     }
 
-    public async Task<LeadRow?> CreateAsync(int companyId, int customerId, SaveLeadDto dto, int userId)
+    public async Task<LeadRow?> CreateAsync(int companyId, int customerId, SaveLeadDto dto, int? userId)
     {
         using var db = _factory.CreateConnection();
         var id = await db.ExecuteScalarAsync<int>(@"
@@ -215,6 +218,40 @@ public class LeadRepository : ILeadRepository
             LEFT JOIN dbo.wsm_users u ON u.user_id = e.sent_by
             WHERE e.company_id = @companyId AND e.customer_id = @customerId
             ORDER BY created_at DESC", new { companyId, leadId, customerId });
+    }
+
+    public async Task AddSharesAsync(int companyId, int leadId, IEnumerable<PropertyRow> properties, string channel, int userId)
+    {
+        var list = properties.ToList();
+        using var db = _factory.CreateConnection();
+        await db.ExecuteAsync(@"
+            INSERT INTO dbo.wsm_lead_shares (company_id, lead_id, property_id, channel, shared_by)
+            VALUES (@companyId, @leadId, @PropertyId, @channel, @userId)",
+            list.Select(p => new { companyId, leadId, p.PropertyId, channel, userId }));
+        await db.ExecuteAsync(@"
+            INSERT INTO dbo.wsm_lead_activities (company_id, lead_id, activity_type, body, property_id, created_by)
+            VALUES (@companyId, @leadId, 'SHARE', @body, @propertyId, @userId);
+            UPDATE dbo.wsm_leads SET updated_at = SYSUTCDATETIME() WHERE lead_id = @leadId;",
+            new
+            {
+                companyId, leadId, userId,
+                body = $"{(channel == "EMAIL" ? "Email" : "WhatsApp")}: " + string.Join(", ", list.Select(p => $"{p.RefNo} {p.Title}")),
+                propertyId = list.Count == 1 ? list[0].PropertyId : (int?)null
+            });
+    }
+
+    public async Task UpdateFromBotAsync(int leadId, string? communities, string? emirate, decimal? budgetMax, string? requirements)
+    {
+        using var db = _factory.CreateConnection();
+        await db.ExecuteAsync(@"
+            UPDATE dbo.wsm_leads
+            SET communities = ISNULL(@communities, communities), emirate = ISNULL(@emirate, emirate),
+                budget_max = ISNULL(@budgetMax, budget_max),
+                requirements = CASE WHEN @requirements IS NULL THEN requirements
+                                    WHEN requirements IS NULL THEN @requirements
+                                    ELSE LEFT(requirements + CHAR(10) + @requirements, 2000) END,
+                updated_at = SYSUTCDATETIME()
+            WHERE lead_id = @leadId", new { leadId, communities, emirate, budgetMax, requirements });
     }
 
     public async Task<bool> HasOpenLeadAsync(int companyId, int customerId)

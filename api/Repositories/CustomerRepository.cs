@@ -19,6 +19,7 @@ public interface ICustomerRepository
     Task<IEnumerable<AssignmentRow>> GetAssignmentHistoryAsync(int companyId, int customerId);
     Task<CustomerRow> StartChatAsync(int companyId, string mobileNo, string? whatsappName);
     Task UpdateChatAsync(int customerId, string chatState, string? customerName, string? email);
+    Task SetBotLeadAsync(int customerId, string chatState, int? botLeadId);
 }
 
 public class CustomerRepository : ICustomerRepository
@@ -160,6 +161,14 @@ public class CustomerRepository : ICustomerRepository
             VALUES (@companyId, @mobileNo, @whatsappName, 'ASK_NAME', 'WhatsApp');
             SELECT CAST(SCOPE_IDENTITY() AS INT);", new { companyId, mobileNo, whatsappName });
         return (await GetByIdAsync(companyId, id))!;
+    }
+
+    public async Task SetBotLeadAsync(int customerId, string chatState, int? botLeadId)
+    {
+        using var db = _factory.CreateConnection();
+        await db.ExecuteAsync(@"
+            UPDATE dbo.wsm_customers SET chat_state = @chatState, bot_lead_id = @botLeadId, updated_at = SYSUTCDATETIME()
+            WHERE customer_id = @customerId", new { customerId, chatState, botLeadId });
     }
 
     public async Task UpdateChatAsync(int customerId, string chatState, string? customerName, string? email)

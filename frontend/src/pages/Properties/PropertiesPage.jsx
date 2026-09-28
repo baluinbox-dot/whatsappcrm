@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Building2, Plus, RefreshCw, Search, X, Pencil, Trash2, ImageOff, Star, MapPin } from "lucide-react";
+import { Building2, Plus, RefreshCw, Search, X, Pencil, Trash2, ImageOff, Star, MapPin, ExternalLink, Link2 } from "lucide-react";
 import { PropertyService } from "@/ServiceLayer/PropertyService/PropertyService";
 import { StaffService } from "@/ServiceLayer/AuthService/AuthService";
 import { useAuth } from "@/context/AuthContext";
@@ -144,6 +144,11 @@ export default function PropertiesPage() {
     } catch (err) {
       setError(apiError(err, "Failed to save property."));
     } finally { setSaving(false); }
+  };
+
+  const copyLink = async (p) => {
+    try { await navigator.clipboard.writeText(p.publicUrl); setSuccess(`Public link for ${p.refNo} copied.`); }
+    catch { setError(`Could not copy. The link is: ${p.publicUrl}`); }
   };
 
   const confirmDelete = async () => {
@@ -455,6 +460,12 @@ export default function PropertiesPage() {
                     <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{p.agentName || "—"}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
+                        {p.publicUrl && (
+                          <>
+                            <a href={p.publicUrl} target="_blank" rel="noreferrer" className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-blue-600" title="Open public page"><ExternalLink className="h-4 w-4" /></a>
+                            <button onClick={() => copyLink(p)} className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-blue-600" title="Copy public link"><Link2 className="h-4 w-4" /></button>
+                          </>
+                        )}
                         <button onClick={() => openEdit(p)} className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-blue-600" title="Edit"><Pencil className="h-4 w-4" /></button>
                         {isAdmin && (
                           <button onClick={() => setDeleteTarget(p)} className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-red-600" title="Delete"><Trash2 className="h-4 w-4" /></button>

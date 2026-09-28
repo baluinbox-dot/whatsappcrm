@@ -28,14 +28,16 @@ public class MailboxService : IMailboxService
     private readonly ICustomerRepository _customers;
     private readonly IEmailInboxRepository _emails;
     private readonly IEmailSettingsRepository _settings;
+    private readonly ILeadRepository _leads;
     private readonly ILogger<MailboxService> _logger;
 
     public MailboxService(ICustomerRepository customers, IEmailInboxRepository emails,
-        IEmailSettingsRepository settings, ILogger<MailboxService> logger)
+        IEmailSettingsRepository settings, ILeadRepository leads, ILogger<MailboxService> logger)
     {
         _customers = customers;
         _emails = emails;
         _settings = settings;
+        _leads = leads;
         _logger = logger;
     }
 
@@ -141,6 +143,7 @@ public class MailboxService : IMailboxService
         if (address.Length > 150) return false;
 
         var customer = await _customers.GetByEmailAsync(s.CompanyId, address);
+        var isNew = customer is null;
         if (customer is null)
         {
             var name = string.IsNullOrWhiteSpace(sender.Name) ? address.Split('@')[0] : sender.Name.Trim();
@@ -150,8 +153,26 @@ public class MailboxService : IMailboxService
         var receivedAt = message.Date == DateTimeOffset.MinValue || message.Date.UtcDateTime > DateTime.UtcNow
             ? DateTime.UtcNow : message.Date.UtcDateTime;
 
-        return await _emails.AddInboundAsync(s.CompanyId, customer.CustomerId, message.MessageId, message.Subject,
-            address, s.EmailAddress, BodyText(message), receivedAt);
+        var body = BodyText(message);
+        var added = await _emails.AddInboundAsync(s.CompanyId, customer.CustomerId, message.MessageId, message.Subject,
+            address, s.EmailAddress, body, receivedAt);
+
+        // A new sender becomes an unassigned lead. Buy / Rent is guessed from the subject (default Buy) — staff confirm it.
+        if (added && isNew)
+        {
+            var subject = LeadImportParser.Text(message.Subject, 300);
+            await _leads.CreateAsync(s.CompanyId, customer.CustomerId, new SaveLeadDto
+            {
+                Source = "EMAIL",
+                Purpose = subject?.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(LeadImportParser.Purpose).FirstOrDefault(p => p is not null) ?? "BUY",
+                PropertyType = LeadImportParser.PropertyType(subject),
+                Emirate = LeadImportParser.Emirate(subject),
+                Priority = "WARM",
+                Requirements = subject is null ? null : $"Email: {subject}"
+            }, null);
+        }
+        return added;
     }
 
     private static string? BodyText(MimeMessage message)

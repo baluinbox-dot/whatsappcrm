@@ -22,22 +22,30 @@ public class PropertiesController : ControllerBase
     private readonly IPropertyRepository _repo;
     private readonly IUserRepository _users;
     private readonly UploadStorage _storage;
+    private readonly PublicLinks _links;
 
-    public PropertiesController(IPropertyRepository repo, IUserRepository users, UploadStorage storage)
+    public PropertiesController(IPropertyRepository repo, IUserRepository users, UploadStorage storage, PublicLinks links)
     {
         _repo = repo;
         _users = users;
         _storage = storage;
+        _links = links;
+    }
+
+    private PropertyRow? WithLink(PropertyRow? row)
+    {
+        if (row is not null) row.PublicUrl = _links.Property(row.PublicCode);
+        return row;
     }
 
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] PropertyFilter filter)
-        => Ok(await _repo.GetAllAsync(User.CompanyId(), filter));
+        => Ok((await _repo.GetAllAsync(User.CompanyId(), filter)).Select(WithLink));
 
     [HttpGet("{id:int}")]
     public async Task<IActionResult> Get(int id)
     {
-        var row = await _repo.GetByIdAsync(User.CompanyId(), id);
+        var row = WithLink(await _repo.GetByIdAsync(User.CompanyId(), id));
         return row is null ? NotFound() : Ok(row);
     }
 
@@ -48,7 +56,7 @@ public class PropertiesController : ControllerBase
         if (!User.IsAdmin()) dto.AgentId = User.UserId();
         var error = await CheckAsync(dto);
         if (error is not null) return BadRequest(new { message = error });
-        return Ok(await _repo.CreateAsync(User.CompanyId(), dto, User.UserId()));
+        return Ok(WithLink(await _repo.CreateAsync(User.CompanyId(), dto, User.UserId())));
     }
 
     [HttpPut("{id:int}")]
@@ -61,7 +69,7 @@ public class PropertiesController : ControllerBase
         if (!User.IsAdmin()) dto.AgentId = existing.AgentId;
         var error = await CheckAsync(dto, existing.AgentId);
         if (error is not null) return BadRequest(new { message = error });
-        return Ok(await _repo.UpdateAsync(User.CompanyId(), id, dto, User.UserId()));
+        return Ok(WithLink(await _repo.UpdateAsync(User.CompanyId(), id, dto, User.UserId())));
     }
 
     [HttpDelete("{id:int}")]

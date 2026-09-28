@@ -183,6 +183,7 @@ public class CustomerRow
     public string? Email { get; set; }
     public string? WhatsappName { get; set; }
     public string ChatState { get; set; } = "DONE";
+    public int? BotLeadId { get; set; }
     public string Source { get; set; } = "WhatsApp";
     public int? AssignedTo { get; set; }
     public string? AssignedToName { get; set; }
@@ -419,9 +420,32 @@ public class PropertyRow
     public string? AgentName { get; set; }
     public string? CoverFile { get; set; }
     public int ImageCount { get; set; }
+    public string? PublicCode { get; set; }
+    public string? PublicUrl { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
     public List<PropertyFileRow> Files { get; set; } = new();
+}
+
+public class MatchRow : PropertyRow
+{
+    public bool InPreferredArea { get; set; }
+    public DateTime? LastSharedAt { get; set; }
+    public string? LastSharedChannel { get; set; }
+}
+
+public class PublicPropertyView
+{
+    public PropertyRow Property { get; set; } = new();
+    public string CompanyName { get; set; } = string.Empty;
+    public string? WhatsAppNumber { get; set; }
+}
+
+public class SharePropertiesDto
+{
+    [Required, MinLength(1), MaxLength(10)] public List<int> PropertyIds { get; set; } = new();
+    [Required, RegularExpression("WHATSAPP|EMAIL")] public string Channel { get; set; } = "WHATSAPP";
+    [MaxLength(1000)] public string? Message { get; set; }
 }
 
 public class PropertyFileRow

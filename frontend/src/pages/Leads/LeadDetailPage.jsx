@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   Target, Pencil, Trash2, MessagesSquare, Mail, Phone, CalendarClock, CheckCircle2, Plus, X, StickyNote, Users,
-  Eye, ArrowRightLeft, UserCheck, Sparkles, Bot,
+  Eye, ArrowRightLeft, UserCheck, Sparkles, Bot, Send,
 } from "lucide-react";
 import { LeadService, FollowUpService } from "@/ServiceLayer/LeadService/LeadService";
 import { PropertyService } from "@/ServiceLayer/PropertyService/PropertyService";
@@ -16,6 +16,7 @@ import {
   BUYER_TYPES, PROPERTY_TYPES, labelOf, bedroomsLabel, formatAed, requirementSummary,
 } from "@/lib/realEstate";
 import LeadForm from "./LeadForm";
+import LeadMatches from "./LeadMatches";
 import { statusOf, priorityOf } from "./LeadsPage";
 
 const card = "bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm";
@@ -40,6 +41,7 @@ function Info({ label, value }) {
 
 const ACTIVITY_ICON = {
   NOTE: StickyNote, CALL: Phone, MEETING: Users, VIEWING: Eye, STATUS: ArrowRightLeft, ASSIGN: UserCheck, CREATED: Sparkles,
+  SHARE: Send,
 };
 
 function TimelineItem({ t }) {
@@ -67,7 +69,8 @@ function TimelineItem({ t }) {
   const Icon = ACTIVITY_ICON[t.activityType] ?? StickyNote;
   const title = {
     NOTE: "Note", CALL: `Call${t.outcome ? ` – ${labelOf(CALL_OUTCOMES, t.outcome)}` : ""}`, MEETING: "Meeting", VIEWING: "Viewing",
-    CREATED: "Lead created",
+    CREATED: t.byName ? "Lead created" : "Lead created automatically",
+    SHARE: "Properties shared",
     ASSIGN: `Assigned to ${t.body}`,
     STATUS: `Status: ${t.statusFrom ? `${statusOf(t.statusFrom).label} → ` : ""}${statusOf(t.statusTo).label}`,
   }[t.activityType];
@@ -337,6 +340,8 @@ export default function LeadDetailPage() {
         </div>
 
         <div className="space-y-4 min-w-0">
+          <LeadMatches lead={lead} onError={setError} onShared={(msg) => { setSuccess(msg); load(); }} />
+
           <div className={`${card} p-4`}>
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Follow-ups</h3>

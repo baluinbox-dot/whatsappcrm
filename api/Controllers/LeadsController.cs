@@ -15,15 +15,26 @@ public class LeadsController : ControllerBase
     private readonly IUserRepository _users;
     private readonly IPropertyRepository _properties;
     private readonly IFollowUpRepository _followUps;
+    private readonly ISettingsRepository _whatsAppSettings;
+    private readonly IEmailSettingsRepository _emailSettings;
+    private readonly IWhatsAppService _whatsApp;
+    private readonly IMailboxService _mailbox;
+    private readonly PublicLinks _links;
 
     public LeadsController(ILeadRepository repo, ICustomerRepository customers, IUserRepository users,
-        IPropertyRepository properties, IFollowUpRepository followUps)
+        IPropertyRepository properties, IFollowUpRepository followUps, ISettingsRepository whatsAppSettings,
+        IEmailSettingsRepository emailSettings, IWhatsAppService whatsApp, IMailboxService mailbox, PublicLinks links)
     {
         _repo = repo;
         _customers = customers;
         _users = users;
         _properties = properties;
         _followUps = followUps;
+        _whatsAppSettings = whatsAppSettings;
+        _emailSettings = emailSettings;
+        _whatsApp = whatsApp;
+        _mailbox = mailbox;
+        _links = links;
     }
 
     // Staff only ever see leads assigned to them.
@@ -145,6 +156,73 @@ public class LeadsController : ControllerBase
         if (dto.PropertyId is not null && await _properties.GetByIdAsync(User.CompanyId(), dto.PropertyId.Value) is null)
             return BadRequest(new { message = "Property not found." });
         return Ok(await _followUps.CreateAsync(User.CompanyId(), id, lead.AssignedTo ?? User.UserId(), dto, User.UserId()));
+    }
+
+    [HttpGet("{id:int}/matches")]
+    public async Task<IActionResult> Matches(int id)
+    {
+        var lead = await GetAccessibleAsync(id);
+        if (lead is null) return NotFound();
+        var rows = (await _properties.MatchAsync(User.CompanyId(), lead)).ToList();
+        rows.ForEach(r => r.PublicUrl = _links.Property(r.PublicCode));
+        return Ok(rows);
+    }
+
+    [HttpPost("{id:int}/share")]
+    public async Task<IActionResult> Share(int id, [FromBody] SharePropertiesDto dto)
+    {
+        if (!ModelState.IsValid) return ValidationProblem(ModelState);
+        var lead = await GetAccessibleAsync(id);
+        if (lead is null) return NotFound();
+        var customer = (await _customers.GetByIdAsync(User.CompanyId(), lead.CustomerId))!;
+
+        var properties = new List<PropertyRow>();
+        foreach (var pid in dto.PropertyIds.Distinct())
+        {
+            var p = await _properties.GetByIdAsync(User.CompanyId(), pid);
+            if (p is null) return BadRequest(new { message = "Property not found." });
+            p.PublicUrl = _links.Property(p.PublicCode);
+            properties.Add(p);
+        }
+        var intro = string.IsNullOrWhiteSpace(dto.Message) ? null : dto.Message.Trim();
+        var sent = new List<PropertyRow>();
+        var failed = new List<string>();
+
+        if (dto.Channel == "WHATSAPP")
+        {
+            if (string.IsNullOrEmpty(customer.MobileNo)) return BadRequest(new { message = "This customer has no mobile number." });
+            if (customer.LastInboundAt is null || DateTime.UtcNow - customer.LastInboundAt > TimeSpan.FromHours(24))
+                return BadRequest(new { message = "WhatsApp only allows sending within 24 hours of the customer's last message. Share by email, or ask the customer to message you first." });
+            if (_links.BaseUrl is null)
+                return BadRequest(new { message = "Set App:PublicUrl (your public API address, e.g. the ngrok URL) in the API settings so photos and links can reach the customer." });
+            var settings = await _whatsAppSettings.GetAsync(User.CompanyId());
+            if (settings is null || string.IsNullOrEmpty(settings.AccessToken) || string.IsNullOrEmpty(settings.PhoneNumberId))
+                return BadRequest(new { message = "WhatsApp is not configured. Ask your admin to fill in WhatsApp Settings." });
+
+            if (intro is not null) await _whatsApp.SendFromStaffAsync(settings, customer, intro, User.UserId());
+            foreach (var p in properties)
+            {
+                var (ok, error) = await _whatsApp.SendPropertyAsync(settings, customer, _links.File(p.PropertyId, p.CoverFile),
+                    PropertyText.WhatsAppCaption(p), User.UserId());
+                if (ok) sent.Add(p); else failed.Add($"{p.RefNo}: {error}");
+            }
+        }
+        else
+        {
+            if (string.IsNullOrEmpty(customer.Email)) return BadRequest(new { message = "This customer has no email ID." });
+            var settings = await _emailSettings.GetAsync(User.CompanyId());
+            if (settings is null || settings.IsVerified != "T")
+                return BadRequest(new { message = "Email is not connected. Ask your admin to set up Email Settings." });
+
+            var subject = properties.Count == 1 ? $"{properties[0].Title} ({properties[0].RefNo})" : $"{properties.Count} properties selected for you";
+            var (ok, error) = await _mailbox.SendAsync(settings, customer, subject,
+                PropertyText.EmailBody(customer.CustomerName, intro, properties, User.Identity?.Name), User.UserId());
+            if (ok) sent.AddRange(properties); else failed.Add(error ?? "Email was not sent.");
+        }
+
+        if (sent.Count > 0) await _repo.AddSharesAsync(User.CompanyId(), id, sent, dto.Channel, User.UserId());
+        if (sent.Count == 0) return BadRequest(new { message = $"Nothing was sent. {string.Join(" ", failed)}" });
+        return Ok(new { sent = sent.Count, failed });
     }
 
     [HttpPut("bulk-assign")]
