@@ -9,6 +9,8 @@ export const LeadService = {
   create: (payload) => client.post("/leads", payload).then((r) => r.data),
   update: (id, payload) => client.put(`/leads/${id}`, payload).then((r) => r.data),
   assign: (id, userId) => client.put(`/leads/${id}/assign`, { userId }).then((r) => r.data),
+  bulkAssign: (leadIds, userIds) => client.put("/leads/bulk-assign", { leadIds, userIds }).then((r) => r.data),
+  importLeads: (payload) => client.post("/leads/import", payload).then((r) => r.data),
   setStatus: (id, payload) => client.put(`/leads/${id}/status`, payload).then((r) => r.data),
   remove: (id) => client.delete(`/leads/${id}`).then((r) => r.data),
   timeline: (id) => client.get(`/leads/${id}/timeline`).then((r) => r.data),

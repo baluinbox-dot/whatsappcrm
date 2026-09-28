@@ -147,6 +147,136 @@ public class LeadsController : ControllerBase
         return Ok(await _followUps.CreateAsync(User.CompanyId(), id, lead.AssignedTo ?? User.UserId(), dto, User.UserId()));
     }
 
+    [HttpPut("bulk-assign")]
+    [Authorize(Roles = Roles.Admin)]
+    public async Task<IActionResult> BulkAssign([FromBody] BulkAssignDto dto)
+    {
+        if (!ModelState.IsValid) return ValidationProblem(ModelState);
+        if (await InactiveStaffAsync(dto.UserIds)) return BadRequest(new { message = "Choose active staff members." });
+
+        var done = 0;
+        foreach (var leadId in dto.LeadIds.Distinct())
+        {
+            var lead = await _repo.GetByIdAsync(User.CompanyId(), leadId);
+            if (lead is null) continue;
+            await AssignBothAsync(lead, dto.UserIds.Count == 0 ? null : dto.UserIds[done % dto.UserIds.Count]);
+            done++;
+        }
+        return Ok(new { assigned = done });
+    }
+
+    // Excel / CSV import. DryRun=true only reports what would happen, so the admin can check before importing.
+    [HttpPost("import")]
+    [Authorize(Roles = Roles.Admin)]
+    [RequestSizeLimit(20 * 1024 * 1024)]
+    public async Task<IActionResult> Import([FromBody] ImportLeadsDto dto)
+    {
+        if (!ModelState.IsValid) return ValidationProblem(ModelState);
+        if (await InactiveStaffAsync(dto.AssignUserIds)) return BadRequest(new { message = "Choose active staff members." });
+
+        var companyId = User.CompanyId();
+        var result = new ImportResult { DryRun = dto.DryRun };
+        // Mobile / email already seen earlier in this file -> that row's customer (null during a dry run).
+        var seen = new Dictionary<string, int?>();
+        var turn = 0;
+
+        for (var i = 0; i < dto.Rows.Count; i++)
+        {
+            var row = dto.Rows[i];
+            var mobile = LeadImportParser.Mobile(row.MobileNo);
+            var email = LeadImportParser.Email(row.Email);
+            var r = new ImportRowResult
+            {
+                Row = i + 1, MobileNo = mobile, Email = email, CustomerName = LeadImportParser.Text(row.CustomerName, 150)
+            };
+            result.Rows.Add(r);
+
+            if (mobile is null && email is null)
+            {
+                r.Outcome = "ERROR";
+                r.Message = !string.IsNullOrWhiteSpace(row.MobileNo) ? $"Mobile \"{row.MobileNo.Trim()}\" is not valid."
+                    : !string.IsNullOrWhiteSpace(row.Email) ? $"Email \"{row.Email.Trim()}\" is not valid."
+                    : "No mobile number or email.";
+                result.Errors++;
+                continue;
+            }
+
+            var lead = ToLead(row, dto);
+            r.Lead = lead;
+
+            var existing = mobile is not null ? await _customers.GetByMobileAsync(companyId, mobile) : null;
+            if (existing is null && email is not null) existing = await _customers.GetByEmailAsync(companyId, email);
+            var inFile = (mobile is not null && seen.ContainsKey("m" + mobile)) || (email is not null && seen.ContainsKey("e" + email));
+            int? customerId = existing?.CustomerId
+                ?? (inFile ? (mobile is not null && seen.TryGetValue("m" + mobile, out var a) ? a : seen.GetValueOrDefault("e" + email)) : null);
+
+            if (dto.SkipOpenDuplicates && (inFile || (existing is not null && await _repo.HasOpenLeadAsync(companyId, existing.CustomerId))))
+            {
+                r.Outcome = "DUPLICATE";
+                r.Message = inFile ? "Repeated in this file." : "Customer already has an open lead.";
+                result.Duplicates++;
+                continue;
+            }
+
+            r.Outcome = existing is not null || inFile ? "EXISTING" : "NEW";
+            if (r.Outcome == "NEW") result.NewCustomers++; else result.ExistingCustomers++;
+            r.AssignTo = dto.AssignUserIds.Count == 0 ? null : dto.AssignUserIds[turn++ % dto.AssignUserIds.Count];
+
+            if (!dto.DryRun)
+            {
+                if (customerId is null)
+                {
+                    var (created, error) = await _customers.CreateAsync(companyId,
+                        new SaveCustomerDto { MobileNo = mobile, CustomerName = r.CustomerName, Email = email });
+                    if (created is null)
+                    {
+                        r.Outcome = "ERROR"; r.Message = error; result.Errors++;
+                        continue;
+                    }
+                    customerId = created.CustomerId;
+                }
+                var saved = await _repo.CreateAsync(companyId, customerId.Value, lead, User.UserId());
+                if (r.AssignTo is not null) await AssignBothAsync(saved!, r.AssignTo);
+                r.LeadId = saved!.LeadId;
+                result.LeadsCreated++;
+            }
+
+            if (mobile is not null) seen["m" + mobile] = customerId;
+            if (email is not null) seen["e" + email] = customerId;
+        }
+        return Ok(result);
+    }
+
+    private static SaveLeadDto ToLead(ImportRowDto row, ImportLeadsDto dto)
+    {
+        var beds = LeadImportParser.Bedrooms(row.Bedrooms);
+        var min = LeadImportParser.Amount(row.BudgetMin);
+        var max = LeadImportParser.Amount(row.BudgetMax);
+        if (min > max) (min, max) = (max, min);
+        return new SaveLeadDto
+        {
+            Source = LeadImportParser.Source(row.Source) ?? dto.DefaultSource,
+            Purpose = LeadImportParser.Purpose(row.Purpose) ?? dto.DefaultPurpose,
+            PropertyType = LeadImportParser.PropertyType(row.PropertyType),
+            Emirate = LeadImportParser.Emirate(row.Emirate) ?? LeadImportParser.Emirate(row.Communities),
+            Communities = LeadImportParser.Text(row.Communities, 500),
+            BedroomsMin = beds,
+            BedroomsMax = beds,
+            BudgetMin = min,
+            BudgetMax = max,
+            Nationality = LeadImportParser.Text(row.Nationality, 50),
+            Priority = LeadImportParser.Priority(row.Priority) ?? "WARM",
+            Requirements = LeadImportParser.Text(row.Requirements, 2000)
+        };
+    }
+
+    private async Task<bool> InactiveStaffAsync(IEnumerable<int> userIds)
+    {
+        foreach (var id in userIds.Distinct())
+            if (!await _users.IsActiveMemberAsync(User.CompanyId(), id)) return true;
+        return false;
+    }
+
     private static string? Check(SaveLeadDto dto)
     {
         static string? Blank(string? s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim();

@@ -668,6 +668,70 @@ public class CompleteFollowUpDto
     [MaxLength(2000)] public string? Result { get; set; }
 }
 
+// ---------- Lead import / bulk assign ----------
+
+// Raw spreadsheet cells, already matched to CRM fields by the browser.
+public class ImportRowDto
+{
+    public string? CustomerName { get; set; }
+    public string? MobileNo { get; set; }
+    public string? Email { get; set; }
+    public string? Source { get; set; }
+    public string? Purpose { get; set; }
+    public string? PropertyType { get; set; }
+    public string? Emirate { get; set; }
+    public string? Communities { get; set; }
+    public string? Bedrooms { get; set; }
+    public string? BudgetMin { get; set; }
+    public string? BudgetMax { get; set; }
+    public string? Nationality { get; set; }
+    public string? Priority { get; set; }
+    public string? Requirements { get; set; }
+}
+
+public class ImportLeadsDto
+{
+    [Required, MinLength(1), MaxLength(2000)] public List<ImportRowDto> Rows { get; set; } = new();
+    public bool DryRun { get; set; } = true;
+    [Required, RegularExpression(LeadCodes.Sources)] public string DefaultSource { get; set; } = "IMPORT";
+    [Required, RegularExpression("BUY|RENT")] public string DefaultPurpose { get; set; } = "BUY";
+    // Customers who already have an open lead are skipped instead of getting a second one.
+    public bool SkipOpenDuplicates { get; set; } = true;
+    // Empty = unassigned, one = all to that person, several = round-robin.
+    public List<int> AssignUserIds { get; set; } = new();
+}
+
+public class ImportRowResult
+{
+    public int Row { get; set; }
+    public string Outcome { get; set; } = string.Empty;       // NEW / EXISTING / DUPLICATE / ERROR
+    public string? Message { get; set; }
+    public string? CustomerName { get; set; }
+    public string? MobileNo { get; set; }
+    public string? Email { get; set; }
+    public SaveLeadDto? Lead { get; set; }
+    public int? AssignTo { get; set; }
+    public int? LeadId { get; set; }
+}
+
+public class ImportResult
+{
+    public bool DryRun { get; set; }
+    public int NewCustomers { get; set; }
+    public int ExistingCustomers { get; set; }
+    public int Duplicates { get; set; }
+    public int Errors { get; set; }
+    public int LeadsCreated { get; set; }
+    public List<ImportRowResult> Rows { get; set; } = new();
+}
+
+public class BulkAssignDto
+{
+    [Required, MinLength(1), MaxLength(2000)] public List<int> LeadIds { get; set; } = new();
+    // Empty = unassign, one = all to that person, several = round-robin.
+    public List<int> UserIds { get; set; } = new();
+}
+
 // ---------- Dashboard ----------
 
 public class DashboardStats

@@ -28,6 +28,7 @@ public interface ILeadRepository
     Task<bool> DeleteAsync(int companyId, int leadId);
     Task<IEnumerable<TimelineRow>> TimelineAsync(int companyId, int leadId, int customerId);
     Task AddActivityAsync(int companyId, int leadId, AddActivityDto dto, int userId);
+    Task<bool> HasOpenLeadAsync(int companyId, int customerId);
 }
 
 public class LeadRepository : ILeadRepository
@@ -214,6 +215,15 @@ public class LeadRepository : ILeadRepository
             LEFT JOIN dbo.wsm_users u ON u.user_id = e.sent_by
             WHERE e.company_id = @companyId AND e.customer_id = @customerId
             ORDER BY created_at DESC", new { companyId, leadId, customerId });
+    }
+
+    public async Task<bool> HasOpenLeadAsync(int companyId, int customerId)
+    {
+        using var db = _factory.CreateConnection();
+        return await db.ExecuteScalarAsync<int>(@"
+            SELECT COUNT(*) FROM dbo.wsm_leads
+            WHERE company_id = @companyId AND customer_id = @customerId AND status NOT IN ('WON', 'NOT_INTERESTED', 'LOST')",
+            new { companyId, customerId }) > 0;
     }
 
     public async Task AddActivityAsync(int companyId, int leadId, AddActivityDto dto, int userId)

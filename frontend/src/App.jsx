@@ -18,6 +18,7 @@ import PropertiesPage from "@/pages/Properties/PropertiesPage";
 import ServicesPage from "@/pages/Services/ServicesPage";
 import LeadsPage from "@/pages/Leads/LeadsPage";
 import LeadDetailPage from "@/pages/Leads/LeadDetailPage";
+import ImportLeadsPage from "@/pages/Leads/ImportLeadsPage";
 import FollowUpsPage from "@/pages/FollowUps/FollowUpsPage";
 
 // access: "all" | "admin" | "super"
@@ -137,6 +138,7 @@ export default function App() {
       <Route path="/email-inbox" element={page(<EmailInboxPage />)} />
       <Route path="/customers" element={page(<CustomersPage />)} />
       <Route path="/leads" element={page(<LeadsPage />)} />
+      <Route path="/leads/import" element={page(<ImportLeadsPage />, "admin")} />
       <Route path="/leads/:id" element={page(<LeadDetailPage />)} />
       <Route path="/follow-ups" element={page(<FollowUpsPage />)} />
       <Route path="/properties" element={page(<PropertiesPage />)} />
