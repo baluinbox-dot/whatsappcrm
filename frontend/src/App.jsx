@@ -77,7 +77,7 @@ function Sidebar() {
     <aside className="w-60 shrink-0 border-r border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 flex flex-col">
       <div className="flex items-center gap-2 mb-1 px-2">
         <MessageCircle className="h-6 w-6 shrink-0 text-green-600" />
-        <span className="text-base font-bold leading-tight text-gray-900 dark:text-white">WhatsApp CRM</span>
+        <span className="text-base font-bold leading-tight text-gray-900 dark:text-white">iStreams CRM</span>
       </div>
       <div className="px-2 mb-6 text-xs text-gray-500 dark:text-gray-400 truncate" title={user?.companyName}>{user?.companyName}</div>
 

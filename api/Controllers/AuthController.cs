@@ -118,13 +118,13 @@ public class AuthController : ControllerBase
         var link = $"{baseUrl}/login?reset={token}";
         var body = $@"
             <p>Hi {WebUtility.HtmlEncode(user.FullName)},</p>
-            <p>We received a request to reset your WhatsApp CRM password. Click the link below to choose a new one:</p>
+            <p>We received a request to reset your iStreams CRM password. Click the link below to choose a new one:</p>
             <p><a href=""{link}"">Reset my password</a></p>
             <p>This link expires in 30 minutes. If you didn't ask for this, you can ignore this email.</p>";
 
         try
         {
-            await _email.SendAsync(user.Email, "Reset your WhatsApp CRM password", body);
+            await _email.SendAsync(user.Email, "Reset your iStreams CRM password", body);
         }
         catch (Exception ex)
         {

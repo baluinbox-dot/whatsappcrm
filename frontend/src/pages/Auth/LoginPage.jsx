@@ -94,7 +94,7 @@ function BrandPanel() {
             <MessageCircle className="h-6 w-6 text-white" />
           </div>
           <div>
-            <div className="text-white font-bold leading-tight">WhatsApp CRM</div>
+            <div className="text-white font-bold leading-tight">iStreams CRM</div>
             <div className="text-[10px] uppercase tracking-widest text-green-300/70">by iStreams</div>
           </div>
         </div>
@@ -469,7 +469,7 @@ export default function LoginPage() {
               <MessageCircle className="h-5 w-5 text-white" />
             </div>
             <div>
-              <div className="font-bold text-gray-900 dark:text-white text-sm">WhatsApp CRM</div>
+              <div className="font-bold text-gray-900 dark:text-white text-sm">iStreams CRM</div>
               <div className="text-[11px] text-gray-500 dark:text-gray-400">by iStreams</div>
             </div>
           </div>

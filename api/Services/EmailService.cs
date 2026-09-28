@@ -26,7 +26,7 @@ public class SmtpEmailService : IEmailService
 
         using var message = new MailMessage
         {
-            From = new MailAddress(from, smtp["FromName"] ?? "WhatsApp CRM"),
+            From = new MailAddress(from, smtp["FromName"] ?? "iStreams CRM"),
             Subject = subject,
             Body = htmlBody,
             IsBodyHtml = true

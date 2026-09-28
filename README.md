@@ -1,4 +1,4 @@
-# WhatsApp CRM by iStreams
+# iStreams CRM
 
 Multi-company WhatsApp + Email CRM. Each company connects one business WhatsApp number and one mailbox;
 admins see every chat and email and assign customers to staff, staff reply to their own customers.

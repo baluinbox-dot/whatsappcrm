@@ -16,7 +16,7 @@ END
 SET XACT_ABORT ON;
 BEGIN TRAN;
 
-DECLARE @name NVARCHAR(150) = N'FinOps Digital';
+DECLARE @name NVARCHAR(150) = N'iStreams';
 IF OBJECT_ID('dbo.whatsapp_settings', 'U') IS NOT NULL
     SELECT @name = COALESCE(NULLIF(LTRIM(RTRIM(LEFT(verified_name, CHARINDEX(N' · ', verified_name + N' · ') - 1))), ''), @name)
     FROM dbo.whatsapp_settings WHERE settings_id = 1;
