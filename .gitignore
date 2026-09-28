@@ -8,6 +8,9 @@ api/obj/
 frontend/dist/
 frontend/node_modules/
 
+# Uploaded property images / brochures
+api/uploads/
+
 # Editor / OS
 .vs/
 .vscode/

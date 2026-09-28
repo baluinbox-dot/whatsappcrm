@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate, NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, MessagesSquare, Contact, Users, NotebookPen, MessageCircle, ShieldAlert, LogOut, Mail, AtSign,
+  Building2, BriefcaseBusiness,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import LoginPage from "@/pages/Auth/LoginPage";
@@ -13,6 +14,8 @@ import WhatsAppSettingsPage from "@/pages/WhatsAppSettings/WhatsAppSettingsPage"
 import EmailInboxPage from "@/pages/EmailInbox/EmailInboxPage";
 import EmailSettingsPage from "@/pages/EmailSettings/EmailSettingsPage";
 import SuperAdminPage from "@/pages/SuperAdmin/SuperAdminPage";
+import PropertiesPage from "@/pages/Properties/PropertiesPage";
+import ServicesPage from "@/pages/Services/ServicesPage";
 
 // access: "all" | "admin" | "super"
 const NAV = [
@@ -20,6 +23,8 @@ const NAV = [
   { to: "/inbox", label: "WhatsApp Inbox", icon: MessagesSquare, access: "all" },
   { to: "/email-inbox", label: "Email Inbox", icon: Mail, access: "all" },
   { to: "/customers", label: "Customers", icon: Contact, access: "all" },
+  { to: "/properties", label: "Properties", icon: Building2, access: "all" },
+  { to: "/services", label: "Services", icon: BriefcaseBusiness, access: "all" },
   { to: "/staff", label: "Staff", icon: Users, access: "admin" },
   { to: "/notes", label: "Notes", icon: NotebookPen, access: "all" },
   { to: "/whatsapp-settings", label: "WhatsApp Settings", icon: MessageCircle, access: "admin" },
@@ -126,6 +131,8 @@ export default function App() {
       <Route path="/inbox" element={page(<InboxPage />)} />
       <Route path="/email-inbox" element={page(<EmailInboxPage />)} />
       <Route path="/customers" element={page(<CustomersPage />)} />
+      <Route path="/properties" element={page(<PropertiesPage />)} />
+      <Route path="/services" element={page(<ServicesPage />)} />
       <Route path="/staff" element={page(<StaffPage />, "admin")} />
       <Route path="/notes" element={page(<NotesPage />)} />
       <Route path="/whatsapp-settings" element={page(<WhatsAppSettingsPage />, "admin")} />

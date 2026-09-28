@@ -2,6 +2,7 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.Authorization;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using WhatsAppCrm.Api.Data;
@@ -78,6 +79,9 @@ builder.Services.AddScoped<IEmailSettingsRepository, EmailSettingsRepository>();
 builder.Services.AddScoped<IEmailInboxRepository, EmailInboxRepository>();
 builder.Services.AddScoped<IMailboxService, MailboxService>();
 builder.Services.AddHostedService<EmailPollingService>();
+builder.Services.AddScoped<IPropertyRepository, PropertyRepository>();
+builder.Services.AddScoped<IServiceRepository, ServiceRepository>();
+builder.Services.AddSingleton<UploadStorage>();
 
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
                      ?? new[] { "http://localhost:5098" };
@@ -93,6 +97,12 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(app.Services.GetRequiredService<UploadStorage>().Root),
+    RequestPath = UploadStorage.RequestPath
+});
 
 app.UseCors("frontend");
 app.UseAuthentication();

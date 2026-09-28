@@ -374,6 +374,134 @@ public class SaveNoteDto
     public string? Content { get; set; }
 }
 
+// ---------- Properties ----------
+
+public class PropertyRow
+{
+    public int PropertyId { get; set; }
+    public int RefSeq { get; set; }
+    public string RefNo => $"PRP-{RefSeq:D5}";
+    public string Title { get; set; } = string.Empty;
+    public string Purpose { get; set; } = string.Empty;
+    public string PropertyType { get; set; } = string.Empty;
+    public string Completion { get; set; } = "READY";
+    public string Status { get; set; } = "AVAILABLE";
+    public string Emirate { get; set; } = string.Empty;
+    public string? Community { get; set; }
+    public string? SubCommunity { get; set; }
+    public string? Developer { get; set; }
+    public string? MapUrl { get; set; }
+    public int? Bedrooms { get; set; }
+    public int? Bathrooms { get; set; }
+    public decimal? BuaSqft { get; set; }
+    public decimal? PlotSqft { get; set; }
+    public int? Parking { get; set; }
+    public string? ViewType { get; set; }
+    public string? FloorNo { get; set; }
+    public decimal Price { get; set; }
+    public string? RentFrequency { get; set; }
+    public int? Cheques { get; set; }
+    public decimal? ServiceCharge { get; set; }
+    public decimal? CommissionPct { get; set; }
+    public DateTime? HandoverDate { get; set; }
+    public string? PaymentPlan { get; set; }
+    public int? CompletionPct { get; set; }
+    public string? PermitNo { get; set; }
+    public string? TitleDeedNo { get; set; }
+    public string? OwnerName { get; set; }
+    public string? OwnerMobile { get; set; }
+    public string? OwnerEmail { get; set; }
+    public string? Furnishing { get; set; }
+    public string? Amenities { get; set; }
+    public string? Description { get; set; }
+    public string IsFeatured { get; set; } = "F";
+    public int? AgentId { get; set; }
+    public string? AgentName { get; set; }
+    public string? CoverFile { get; set; }
+    public int ImageCount { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+    public List<PropertyFileRow> Files { get; set; } = new();
+}
+
+public class PropertyFileRow
+{
+    public int FileId { get; set; }
+    public int PropertyId { get; set; }
+    public string FileKind { get; set; } = string.Empty;
+    public string FileName { get; set; } = string.Empty;
+    public string StoredName { get; set; } = string.Empty;
+    public string ContentType { get; set; } = string.Empty;
+    public long SizeBytes { get; set; }
+    public string IsCover { get; set; } = "F";
+    public DateTime CreatedAt { get; set; }
+}
+
+public class SavePropertyDto
+{
+    [Required, MaxLength(200)] public string Title { get; set; } = string.Empty;
+    [Required, RegularExpression("SALE|RENT")] public string Purpose { get; set; } = string.Empty;
+    [Required, RegularExpression("APARTMENT|VILLA|TOWNHOUSE|PENTHOUSE|DUPLEX|HOTEL_APT|OFFICE|SHOP|WAREHOUSE|LAND|BUILDING")]
+    public string PropertyType { get; set; } = string.Empty;
+    [Required, RegularExpression("READY|OFFPLAN")] public string Completion { get; set; } = "READY";
+    [Required, RegularExpression("AVAILABLE|RESERVED|SOLD|RENTED|OFF_MARKET")] public string Status { get; set; } = "AVAILABLE";
+    [Required, MaxLength(30)] public string Emirate { get; set; } = string.Empty;
+    [MaxLength(150)] public string? Community { get; set; }
+    [MaxLength(150)] public string? SubCommunity { get; set; }
+    [MaxLength(150)] public string? Developer { get; set; }
+    [MaxLength(500), Url] public string? MapUrl { get; set; }
+    [Range(0, 20)] public int? Bedrooms { get; set; }
+    [Range(0, 20)] public int? Bathrooms { get; set; }
+    [Range(0, 10000000)] public decimal? BuaSqft { get; set; }
+    [Range(0, 100000000)] public decimal? PlotSqft { get; set; }
+    [Range(0, 100)] public int? Parking { get; set; }
+    [MaxLength(100)] public string? ViewType { get; set; }
+    [MaxLength(20)] public string? FloorNo { get; set; }
+    [Range(0, 10000000000)] public decimal Price { get; set; }
+    [RegularExpression("YEARLY|MONTHLY")] public string? RentFrequency { get; set; }
+    [Range(1, 12)] public int? Cheques { get; set; }
+    [Range(0, 10000)] public decimal? ServiceCharge { get; set; }
+    [Range(0, 100)] public decimal? CommissionPct { get; set; }
+    public DateTime? HandoverDate { get; set; }
+    [MaxLength(100)] public string? PaymentPlan { get; set; }
+    [Range(0, 100)] public int? CompletionPct { get; set; }
+    [MaxLength(50)] public string? PermitNo { get; set; }
+    [MaxLength(50)] public string? TitleDeedNo { get; set; }
+    [MaxLength(150)] public string? OwnerName { get; set; }
+    [MaxLength(20)] public string? OwnerMobile { get; set; }
+    [EmailAddress, MaxLength(150)] public string? OwnerEmail { get; set; }
+    [RegularExpression("FURNISHED|SEMI|UNFURNISHED")] public string? Furnishing { get; set; }
+    [MaxLength(1000)] public string? Amenities { get; set; }
+    public string? Description { get; set; }
+    [Required, RegularExpression("T|F")] public string IsFeatured { get; set; } = "F";
+    public int? AgentId { get; set; }
+}
+
+// ---------- Services ----------
+
+public class ServiceRow
+{
+    public int ServiceId { get; set; }
+    public string ServiceName { get; set; } = string.Empty;
+    public string Category { get; set; } = string.Empty;
+    public decimal? Price { get; set; }
+    public string? PriceNote { get; set; }
+    public string? Description { get; set; }
+    public string IsActive { get; set; } = "T";
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+}
+
+public class SaveServiceDto
+{
+    [Required, MaxLength(150)] public string ServiceName { get; set; } = string.Empty;
+    [Required, MaxLength(50)] public string Category { get; set; } = string.Empty;
+    [Range(0, 10000000000)] public decimal? Price { get; set; }
+    [MaxLength(50)] public string? PriceNote { get; set; }
+    [MaxLength(2000)] public string? Description { get; set; }
+    [Required, RegularExpression("T|F")] public string IsActive { get; set; } = "T";
+}
+
 // ---------- Dashboard ----------
 
 public class DashboardStats
