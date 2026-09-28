@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Contact, Plus, RefreshCw, Search, X, Pencil, Trash2, MessagesSquare, Mail } from "lucide-react";
+import { Contact, Plus, RefreshCw, Search, X, Pencil, Trash2, MessagesSquare, Mail, Target } from "lucide-react";
 import { CustomerService } from "@/ServiceLayer/WhatsAppService/WhatsAppService";
 import { StaffService } from "@/ServiceLayer/AuthService/AuthService";
 import { useAuth } from "@/context/AuthContext";
@@ -198,6 +198,7 @@ export default function CustomersPage() {
                     <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{formatDate(toDate(c.createdAt))}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
+                        <Link to={`/leads?new=1&customer=${c.customerId}`} className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-blue-600" title="Create lead"><Target className="h-4 w-4" /></Link>
                         {c.mobileNo && (
                           <Link to={`/inbox?customer=${c.customerId}`} className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-green-600" title="Open chat"><MessagesSquare className="h-4 w-4" /></Link>
                         )}

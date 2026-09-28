@@ -15,6 +15,7 @@ admins see every chat and email and assign customers to staff, staff reply to th
    - `database/03_staff_mobile_login.sql` (only for databases created before staff mobile sign-in)
    - `database/04_email_inbox.sql`
    - `database/05_properties_services.sql`
+   - `database/06_leads.sql`
 2. Create `api/appsettings.Development.json` (not committed):
    ```json
    {

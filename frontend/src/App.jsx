@@ -1,7 +1,7 @@
 import { Routes, Route, Navigate, NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, MessagesSquare, Contact, Users, NotebookPen, MessageCircle, ShieldAlert, LogOut, Mail, AtSign,
-  Building2, BriefcaseBusiness,
+  Building2, BriefcaseBusiness, Target, CalendarClock,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import LoginPage from "@/pages/Auth/LoginPage";
@@ -16,12 +16,17 @@ import EmailSettingsPage from "@/pages/EmailSettings/EmailSettingsPage";
 import SuperAdminPage from "@/pages/SuperAdmin/SuperAdminPage";
 import PropertiesPage from "@/pages/Properties/PropertiesPage";
 import ServicesPage from "@/pages/Services/ServicesPage";
+import LeadsPage from "@/pages/Leads/LeadsPage";
+import LeadDetailPage from "@/pages/Leads/LeadDetailPage";
+import FollowUpsPage from "@/pages/FollowUps/FollowUpsPage";
 
 // access: "all" | "admin" | "super"
 const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, access: "all" },
   { to: "/inbox", label: "WhatsApp Inbox", icon: MessagesSquare, access: "all" },
   { to: "/email-inbox", label: "Email Inbox", icon: Mail, access: "all" },
+  { to: "/leads", label: "Leads", icon: Target, access: "all" },
+  { to: "/follow-ups", label: "Follow-ups", icon: CalendarClock, access: "all" },
   { to: "/customers", label: "Customers", icon: Contact, access: "all" },
   { to: "/properties", label: "Properties", icon: Building2, access: "all" },
   { to: "/services", label: "Services", icon: BriefcaseBusiness, access: "all" },
@@ -56,8 +61,8 @@ function RequireAuth({ access, children }) {
 
 function Sidebar() {
   const auth = useAuth();
-  const { user, logout, unread, emailUnread } = auth;
-  const badges = { "/inbox": unread, "/email-inbox": emailUnread };
+  const { user, logout, unread, emailUnread, followUpsDue } = auth;
+  const badges = { "/inbox": unread, "/email-inbox": emailUnread, "/follow-ups": followUpsDue };
   const linkClass = ({ isActive }) =>
     `flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
       isActive
@@ -79,7 +84,7 @@ function Sidebar() {
             <n.icon className="h-4 w-4" />
             <span className="flex-1">{n.label}</span>
             {badges[n.to] > 0 && (
-              <span className={`ml-auto rounded-full px-1.5 py-0.5 text-[10px] font-semibold text-white ${n.to === "/inbox" ? "bg-green-600" : "bg-blue-600"}`}>
+              <span className={`ml-auto rounded-full px-1.5 py-0.5 text-[10px] font-semibold text-white ${n.to === "/inbox" ? "bg-green-600" : n.to === "/follow-ups" ? "bg-red-600" : "bg-blue-600"}`}>
                 {badges[n.to] > 99 ? "99+" : badges[n.to]}
               </span>
             )}
@@ -131,6 +136,9 @@ export default function App() {
       <Route path="/inbox" element={page(<InboxPage />)} />
       <Route path="/email-inbox" element={page(<EmailInboxPage />)} />
       <Route path="/customers" element={page(<CustomersPage />)} />
+      <Route path="/leads" element={page(<LeadsPage />)} />
+      <Route path="/leads/:id" element={page(<LeadDetailPage />)} />
+      <Route path="/follow-ups" element={page(<FollowUpsPage />)} />
       <Route path="/properties" element={page(<PropertiesPage />)} />
       <Route path="/services" element={page(<ServicesPage />)} />
       <Route path="/staff" element={page(<StaffPage />, "admin")} />

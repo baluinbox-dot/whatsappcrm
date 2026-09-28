@@ -502,6 +502,172 @@ public class SaveServiceDto
     [Required, RegularExpression("T|F")] public string IsActive { get; set; } = "T";
 }
 
+// ---------- Leads ----------
+
+public static class LeadCodes
+{
+    public const string Sources = "WHATSAPP|EMAIL|BAYUT|PROPERTY_FINDER|DUBIZZLE|WEBSITE|WALK_IN|REFERRAL|FACEBOOK|INSTAGRAM|GOOGLE|IMPORT|OTHER";
+    public const string Statuses = "NEW|CONTACTED|QUALIFIED|VIEWING_SCHEDULED|VIEWING_DONE|NEGOTIATION|WON|NO_ANSWER|FOLLOW_UP_LATER|NOT_INTERESTED|LOST";
+    public const string LostReasons = "BUDGET|BOUGHT_ELSEWHERE|NOT_REACHABLE|LOCATION|NOT_READY|JUNK|OTHER";
+    public static readonly string[] Closed = { "WON", "NOT_INTERESTED", "LOST" };
+}
+
+public class LeadRow
+{
+    public int LeadId { get; set; }
+    public int LeadSeq { get; set; }
+    public string LeadNo => $"LD-{LeadSeq:D5}";
+    public int CustomerId { get; set; }
+    public string? CustomerName { get; set; }
+    public string? WhatsappName { get; set; }
+    public string? MobileNo { get; set; }
+    public string? Email { get; set; }
+    public string Source { get; set; } = string.Empty;
+    public string Purpose { get; set; } = string.Empty;
+    public string? PropertyType { get; set; }
+    public string? Emirate { get; set; }
+    public string? Communities { get; set; }
+    public int? BedroomsMin { get; set; }
+    public int? BedroomsMax { get; set; }
+    public decimal? BudgetMin { get; set; }
+    public decimal? BudgetMax { get; set; }
+    public string? Finance { get; set; }
+    public string? Completion { get; set; }
+    public string? MoveTimeline { get; set; }
+    public string? Nationality { get; set; }
+    public string? BuyerType { get; set; }
+    public string? Requirements { get; set; }
+    public string Status { get; set; } = "NEW";
+    public string Priority { get; set; } = "WARM";
+    public string? LostReason { get; set; }
+    public int? WonPropertyId { get; set; }
+    public int? WonPropertySeq { get; set; }
+    public string? WonPropertyRef => WonPropertySeq is null ? null : $"PRP-{WonPropertySeq:D5}";
+    public string? WonPropertyTitle { get; set; }
+    public decimal? DealValue { get; set; }
+    public decimal? CommissionAmount { get; set; }
+    public DateTime? ClosedAt { get; set; }
+    public int? AssignedTo { get; set; }
+    public string? AssignedToName { get; set; }
+    public DateTime? NextFollowUpAt { get; set; }
+    public DateTime? LastActivityAt { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+}
+
+public class SaveLeadDto
+{
+    // Either an existing customer, or a new contact (mobile and/or email).
+    public int? CustomerId { get; set; }
+    [MaxLength(150)] public string? CustomerName { get; set; }
+    [RegularExpression(@"^\d{8,15}$", ErrorMessage = "Mobile number must be 8-15 digits with country code.")]
+    public string? MobileNo { get; set; }
+    [EmailAddress, MaxLength(150)] public string? Email { get; set; }
+
+    [Required, RegularExpression(LeadCodes.Sources)] public string Source { get; set; } = "OTHER";
+    [Required, RegularExpression("BUY|RENT")] public string Purpose { get; set; } = "BUY";
+    [RegularExpression("APARTMENT|VILLA|TOWNHOUSE|PENTHOUSE|DUPLEX|HOTEL_APT|OFFICE|SHOP|WAREHOUSE|LAND|BUILDING")]
+    public string? PropertyType { get; set; }
+    [MaxLength(30)] public string? Emirate { get; set; }
+    [MaxLength(500)] public string? Communities { get; set; }
+    [Range(0, 20)] public int? BedroomsMin { get; set; }
+    [Range(0, 20)] public int? BedroomsMax { get; set; }
+    [Range(0, 10000000000)] public decimal? BudgetMin { get; set; }
+    [Range(0, 10000000000)] public decimal? BudgetMax { get; set; }
+    [RegularExpression("CASH|MORTGAGE")] public string? Finance { get; set; }
+    [RegularExpression("READY|OFFPLAN|ANY")] public string? Completion { get; set; }
+    [RegularExpression("IMMEDIATE|1_3_MONTHS|3_6_MONTHS|6_PLUS|JUST_LOOKING")] public string? MoveTimeline { get; set; }
+    [MaxLength(50)] public string? Nationality { get; set; }
+    [RegularExpression("END_USER|INVESTOR")] public string? BuyerType { get; set; }
+    [MaxLength(2000)] public string? Requirements { get; set; }
+    [Required, RegularExpression("HOT|WARM|COLD")] public string Priority { get; set; } = "WARM";
+    public int? AssignedTo { get; set; }
+}
+
+public class SetLeadStatusDto
+{
+    [Required, RegularExpression(LeadCodes.Statuses)] public string Status { get; set; } = string.Empty;
+    [RegularExpression(LeadCodes.LostReasons)] public string? LostReason { get; set; }
+    public int? WonPropertyId { get; set; }
+    [Range(0, 10000000000)] public decimal? DealValue { get; set; }
+    [Range(0, 10000000000)] public decimal? CommissionAmount { get; set; }
+    [MaxLength(2000)] public string? Note { get; set; }
+}
+
+public class LeadStatusCount
+{
+    public string Status { get; set; } = string.Empty;
+    public int Leads { get; set; }
+}
+
+// One row of a lead's timeline: CRM activities plus the customer's WhatsApp messages and emails.
+public class TimelineRow
+{
+    public string Kind { get; set; } = string.Empty;          // ACTIVITY / WHATSAPP / EMAIL
+    public int Id { get; set; }
+    public string? ActivityType { get; set; }
+    public string? Direction { get; set; }
+    public string? Subject { get; set; }
+    public string? Body { get; set; }
+    public string? Outcome { get; set; }
+    public string? StatusFrom { get; set; }
+    public string? StatusTo { get; set; }
+    public int? PropertyId { get; set; }
+    public int? PropertySeq { get; set; }
+    public string? PropertyRef => PropertySeq is null ? null : $"PRP-{PropertySeq:D5}";
+    public string? PropertyTitle { get; set; }
+    public string? ByName { get; set; }
+    public DateTime CreatedAt { get; set; }
+}
+
+public class AddActivityDto
+{
+    [Required, RegularExpression("NOTE|CALL|MEETING|VIEWING")] public string ActivityType { get; set; } = "NOTE";
+    [MaxLength(2000)] public string? Body { get; set; }
+    [RegularExpression("ANSWERED|NO_ANSWER|BUSY|SWITCHED_OFF|WRONG_NUMBER")] public string? Outcome { get; set; }
+    public int? PropertyId { get; set; }
+}
+
+public class FollowUpRow
+{
+    public int FollowUpId { get; set; }
+    public int LeadId { get; set; }
+    public int LeadSeq { get; set; }
+    public string LeadNo => $"LD-{LeadSeq:D5}";
+    public int CustomerId { get; set; }
+    public string? CustomerName { get; set; }
+    public string? WhatsappName { get; set; }
+    public string? MobileNo { get; set; }
+    public string? Email { get; set; }
+    public string LeadStatus { get; set; } = string.Empty;
+    public string FollowUpType { get; set; } = string.Empty;
+    public DateTime DueAt { get; set; }
+    public string? Notes { get; set; }
+    public int? PropertyId { get; set; }
+    public int? PropertySeq { get; set; }
+    public string? PropertyRef => PropertySeq is null ? null : $"PRP-{PropertySeq:D5}";
+    public string? PropertyTitle { get; set; }
+    public int? AssignedTo { get; set; }
+    public string? AssignedToName { get; set; }
+    public string IsDone { get; set; } = "F";
+    public DateTime? DoneAt { get; set; }
+    public string? DoneByName { get; set; }
+    public DateTime CreatedAt { get; set; }
+}
+
+public class SaveFollowUpDto
+{
+    [Required, RegularExpression("CALL|WHATSAPP|EMAIL|MEETING|VIEWING")] public string FollowUpType { get; set; } = "CALL";
+    [Required] public DateTime DueAt { get; set; }
+    [MaxLength(1000)] public string? Notes { get; set; }
+    public int? PropertyId { get; set; }
+}
+
+public class CompleteFollowUpDto
+{
+    [MaxLength(2000)] public string? Result { get; set; }
+}
+
 // ---------- Dashboard ----------
 
 public class DashboardStats

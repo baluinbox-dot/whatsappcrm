@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { AuthService } from "@/ServiceLayer/AuthService/AuthService";
 import { InboxService } from "@/ServiceLayer/WhatsAppService/WhatsAppService";
 import { EmailService } from "@/ServiceLayer/EmailService/EmailService";
+import { FollowUpService } from "@/ServiceLayer/LeadService/LeadService";
 import { TOKEN_KEY, USER_KEY } from "@/lib/apiClient";
 
 const AuthContext = createContext(null);
@@ -12,11 +13,13 @@ export function AuthProvider({ children }) {
   });
   const [unread, setUnread] = useState(0);
   const [emailUnread, setEmailUnread] = useState(0);
+  const [followUpsDue, setFollowUpsDue] = useState(0);
   const [loading, setLoading] = useState(true);
 
   const refreshUnread = useCallback(async () => {
     try { setUnread(await InboxService.unreadCount()); } catch { setUnread(0); }
     try { setEmailUnread(await EmailService.unreadCount()); } catch { setEmailUnread(0); }
+    try { const c = await FollowUpService.counts(); setFollowUpsDue(c.overdue + c.today); } catch { setFollowUpsDue(0); }
   }, []);
 
   useEffect(() => {
@@ -44,6 +47,7 @@ export function AuthProvider({ children }) {
     setUser(null);
     setUnread(0);
     setEmailUnread(0);
+    setFollowUpsDue(0);
   };
 
   // Keeps the sidebar unread badge current.
@@ -62,11 +66,12 @@ export function AuthProvider({ children }) {
     logout,
     unread,
     emailUnread,
+    followUpsDue,
     refreshUnread,
     isAuthenticated: !!user,
     isAdmin: user?.role === "ADMIN",
     isSuperAdmin: user?.isSuperAdmin === "T",
-  }), [user, loading, unread, emailUnread, refreshUnread]);
+  }), [user, loading, unread, emailUnread, followUpsDue, refreshUnread]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

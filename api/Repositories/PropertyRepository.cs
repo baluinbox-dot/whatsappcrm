@@ -128,7 +128,11 @@ public class PropertyRepository : IPropertyRepository
         var files = (await db.QueryAsync<PropertyFileRow>(
             "SELECT * FROM dbo.wsm_property_files WHERE company_id = @companyId AND property_id = @propertyId",
             new { companyId, propertyId })).ToList();
-        var n = await db.ExecuteAsync("DELETE FROM dbo.wsm_properties WHERE company_id = @companyId AND property_id = @propertyId",
+        var n = await db.ExecuteAsync(@"
+            UPDATE dbo.wsm_leads SET won_property_id = NULL WHERE company_id = @companyId AND won_property_id = @propertyId;
+            UPDATE dbo.wsm_lead_activities SET property_id = NULL WHERE company_id = @companyId AND property_id = @propertyId;
+            UPDATE dbo.wsm_follow_ups SET property_id = NULL WHERE company_id = @companyId AND property_id = @propertyId;
+            DELETE FROM dbo.wsm_properties WHERE company_id = @companyId AND property_id = @propertyId;",
             new { companyId, propertyId });
         return n == 0 ? Enumerable.Empty<PropertyFileRow>() : files;
     }
