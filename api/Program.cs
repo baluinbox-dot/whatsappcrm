@@ -85,6 +85,7 @@ builder.Services.AddSingleton<UploadStorage>();
 builder.Services.AddSingleton<PublicLinks>();
 builder.Services.AddScoped<ILeadRepository, LeadRepository>();
 builder.Services.AddScoped<IFollowUpRepository, FollowUpRepository>();
+builder.Services.AddScoped<IReportRepository, ReportRepository>();
 
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
                      ?? new[] { "http://localhost:5098" };

@@ -21,9 +21,12 @@ admins see every chat and email and assign customers to staff, staff reply to th
    ```json
    {
      "Jwt": { "Key": "<random string, 32+ characters>" },
-     "Smtp": { "User": "you@gmail.com", "Password": "<Gmail App Password>", "From": "you@gmail.com" }
+     "Smtp": { "User": "you@gmail.com", "Password": "<Gmail App Password>", "From": "you@gmail.com" },
+     "App": { "PublicUrl": "https://<ngrok or production domain of the API>" }
    }
    ```
+   `App:PublicUrl` is the address customers reach: property photos and `/p/<code>` pages shared on
+   WhatsApp / email are served from it.
 3. `cd frontend && npm install`
 
 ## Run

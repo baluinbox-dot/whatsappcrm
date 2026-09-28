@@ -1,7 +1,7 @@
 import { Routes, Route, Navigate, NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, MessagesSquare, Contact, Users, NotebookPen, MessageCircle, ShieldAlert, LogOut, Mail, AtSign,
-  Building2, BriefcaseBusiness, Target, CalendarClock,
+  Building2, BriefcaseBusiness, Target, CalendarClock, BarChart3,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import LoginPage from "@/pages/Auth/LoginPage";
@@ -20,6 +20,7 @@ import LeadsPage from "@/pages/Leads/LeadsPage";
 import LeadDetailPage from "@/pages/Leads/LeadDetailPage";
 import ImportLeadsPage from "@/pages/Leads/ImportLeadsPage";
 import FollowUpsPage from "@/pages/FollowUps/FollowUpsPage";
+import ReportsPage from "@/pages/Reports/ReportsPage";
 
 // access: "all" | "admin" | "super"
 const NAV = [
@@ -31,6 +32,7 @@ const NAV = [
   { to: "/customers", label: "Customers", icon: Contact, access: "all" },
   { to: "/properties", label: "Properties", icon: Building2, access: "all" },
   { to: "/services", label: "Services", icon: BriefcaseBusiness, access: "all" },
+  { to: "/reports", label: "Reports", icon: BarChart3, access: "all" },
   { to: "/staff", label: "Staff", icon: Users, access: "admin" },
   { to: "/notes", label: "Notes", icon: NotebookPen, access: "all" },
   { to: "/whatsapp-settings", label: "WhatsApp Settings", icon: MessageCircle, access: "admin" },
@@ -143,6 +145,7 @@ export default function App() {
       <Route path="/follow-ups" element={page(<FollowUpsPage />)} />
       <Route path="/properties" element={page(<PropertiesPage />)} />
       <Route path="/services" element={page(<ServicesPage />)} />
+      <Route path="/reports" element={page(<ReportsPage />)} />
       <Route path="/staff" element={page(<StaffPage />, "admin")} />
       <Route path="/notes" element={page(<NotesPage />)} />
       <Route path="/whatsapp-settings" element={page(<WhatsAppSettingsPage />, "admin")} />
