@@ -776,4 +776,48 @@ public class StaffLoad
     public int Customers { get; set; }
     public int UnreadChats { get; set; }
     public int RepliesToday { get; set; }
+    public int OpenLeads { get; set; }
+    public int OverdueFollowUps { get; set; }
+    public int DealsWonMonth { get; set; }
+    public decimal DealValueMonth { get; set; }
+}
+
+public class DashboardWork
+{
+    public int OverdueFollowUps { get; set; }
+    public int DueToday { get; set; }
+    public int ViewingsToday { get; set; }
+    public int ViewingsTomorrow { get; set; }
+    public int NewLeadsToday { get; set; }
+    public int UnassignedLeads { get; set; }
+    public int ColdLeads { get; set; }
+}
+
+public class DashboardInventory
+{
+    public int AvailableSale { get; set; }
+    public int AvailableRent { get; set; }
+    public int Reserved { get; set; }
+    public int SoldMonth { get; set; }
+    public int RentedMonth { get; set; }
+    public int MissingPhotos { get; set; }
+}
+
+public class DashboardActivity
+{
+    public int ActivityId { get; set; }
+    public int LeadId { get; set; }
+    public int LeadSeq { get; set; }
+    public string LeadNo => $"LD-{LeadSeq:D5}";
+    public string? CustomerName { get; set; }
+    public string? WhatsappName { get; set; }
+    public string? MobileNo { get; set; }
+    public string? Email { get; set; }
+    public string ActivityType { get; set; } = string.Empty;
+    public string? Body { get; set; }
+    public string? Outcome { get; set; }
+    public string? StatusTo { get; set; }
+    public string? LeadSource { get; set; }
+    public string? ByName { get; set; }
+    public DateTime CreatedAt { get; set; }
 }

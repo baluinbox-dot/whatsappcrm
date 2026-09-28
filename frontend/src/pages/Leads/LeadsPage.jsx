@@ -19,6 +19,7 @@ const VIEWS = [
   { value: "open", label: "Open" },
   { value: "", label: "All" },
   { value: "overdue", label: "Overdue follow-up" },
+  { value: "cold", label: "Going cold (7+ days)" },
   { value: "unassigned", label: "Unassigned", admin: true },
   { value: "closed", label: "Closed" },
 ];
@@ -30,7 +31,12 @@ export default function LeadsPage() {
   const [rows, setRows] = useState([]);
   const [counts, setCounts] = useState([]);
   const [staff, setStaff] = useState([]);
-  const [filters, setFilters] = useState({ search: "", view: "open", status: "", priority: "", source: "", assignedTo: "" });
+  // Dashboard links open the list pre-filtered, e.g. /leads?view=cold or /leads?status=NEW.
+  const [filters, setFilters] = useState(() => ({
+    search: "", priority: "", source: "", assignedTo: "",
+    status: params.get("status") ?? "",
+    view: params.get("status") ? "" : params.get("view") ?? "open",
+  }));
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [presetCustomer, setPresetCustomer] = useState(null);

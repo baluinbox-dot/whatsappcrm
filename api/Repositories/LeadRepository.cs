@@ -11,7 +11,7 @@ public class LeadFilter
     public string? Priority { get; set; }
     public string? Source { get; set; }
     public int? AssignedTo { get; set; }
-    public string? View { get; set; }        // open / closed / unassigned / overdue
+    public string? View { get; set; }        // open / closed / unassigned / overdue / cold
     public int? CustomerId { get; set; }
 }
 
@@ -68,6 +68,9 @@ public class LeadRepository : ILeadRepository
                    OR (@view = 'open' AND l.status NOT IN ('WON', 'NOT_INTERESTED', 'LOST'))
                    OR (@view = 'closed' AND l.status IN ('WON', 'NOT_INTERESTED', 'LOST'))
                    OR (@view = 'unassigned' AND l.assigned_to IS NULL)
+                   OR (@view = 'cold' AND l.status NOT IN ('WON', 'NOT_INTERESTED', 'LOST')
+                       AND l.updated_at < DATEADD(DAY, -7, SYSUTCDATETIME())
+                       AND NOT EXISTS (SELECT 1 FROM dbo.wsm_follow_ups f WHERE f.lead_id = l.lead_id AND f.is_done = 'F'))
                    OR (@view = 'overdue' AND EXISTS (SELECT 1 FROM dbo.wsm_follow_ups f
                         WHERE f.lead_id = l.lead_id AND f.is_done = 'F' AND f.due_at < SYSUTCDATETIME())))
               AND (@search IS NULL OR l.lead_seq = @leadSeq
