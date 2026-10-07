@@ -17,3 +17,10 @@ api/uploads/
 *.user
 .DS_Store
 Thumbs.db
+
+# Postgres API (same rules as api/)
+api-pg/appsettings.Development.json
+api-pg/appsettings.*.local.json
+api-pg/bin/
+api-pg/obj/
+api-pg/uploads/

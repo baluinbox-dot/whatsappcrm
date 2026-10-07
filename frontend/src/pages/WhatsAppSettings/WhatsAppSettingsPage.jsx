@@ -2,10 +2,9 @@ import { useEffect, useState } from "react";
 import { MessageCircle, RefreshCw, Save, ShieldCheck, Copy, Loader2 } from "lucide-react";
 import { WhatsAppService } from "@/ServiceLayer/WhatsAppService/WhatsAppService";
 import { Alerts, inputCls, labelCls } from "@/components/common/ui";
-import { apiError } from "@/lib/apiClient";
+import { apiError, apiBase } from "@/lib/apiClient";
 
 const emptyForm = { wabaId: "", phoneNumberId: "", displayNumber: "", accessToken: "", verifyToken: "", appSecret: "" };
-const webhookBase = `${import.meta.env.VITE_API_URI}/whatsapp/webhook`;
 
 export default function WhatsAppSettingsPage() {
   const [settings, setSettings] = useState(null);
@@ -72,7 +71,7 @@ export default function WhatsAppSettingsPage() {
   const copy = (text) => navigator.clipboard?.writeText(text).then(() => setSuccess("Copied to clipboard."));
 
   const verified = settings?.isVerified === "T";
-  const webhookUrl = settings?.companyCode ? `${webhookBase}/${settings.companyCode}` : "";
+  const webhookUrl = settings?.companyCode ? `${apiBase()}/whatsapp/webhook/${settings.companyCode}` : "";
 
   return (
     <div className="p-6 space-y-4">

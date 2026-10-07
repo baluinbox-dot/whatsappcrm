@@ -2,11 +2,11 @@ import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Mail, Lock, Eye, EyeOff, ArrowRight, Loader2, ShieldCheck, User, Phone, Building2,
-  CheckCircle2, RefreshCw, ArrowLeft, MessageCircle,
+  CheckCircle2, RefreshCw, ArrowLeft, MessageCircle, Database,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { AuthService } from "@/ServiceLayer/AuthService/AuthService";
-import { apiError } from "@/lib/apiClient";
+import { apiError, DB_OPTIONS, getDb, setDb } from "@/lib/apiClient";
 
 const TABS = [
   { key: "admin", label: "Admin" },
@@ -454,6 +454,8 @@ export default function LoginPage() {
   const resetToken = searchParams.get("reset");
   const requested = searchParams.get("tab");
   const [tab, setTab] = useState(TABS.some((t) => t.key === requested) ? requested : "admin");
+  const [db, setDbState] = useState(getDb);
+  const pickDb = (e) => { setDb(e.target.value); setDbState(e.target.value); };
 
   return (
     <div className="relative min-h-full flex items-center justify-center bg-gray-100 dark:bg-slate-950 p-4 sm:p-6 overflow-hidden">
@@ -473,6 +475,18 @@ export default function LoginPage() {
               <div className="text-[11px] text-gray-500 dark:text-gray-400">by iStreams</div>
             </div>
           </div>
+
+          {DB_OPTIONS.length > 1 && (
+            <div className="mb-5">
+              <label className={label}>Database</label>
+              <div className="relative">
+                <Database className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                <select value={db} onChange={pickDb} className={field}>
+                  {DB_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              </div>
+            </div>
+          )}
 
           {resetToken ? (
             <ResetPasswordForm token={resetToken} onDone={() => setSearchParams({})} />

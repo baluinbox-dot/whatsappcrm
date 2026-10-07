@@ -1,3 +1,5 @@
+import { apiBase } from "@/lib/apiClient";
+
 export const EMIRATES = ["Dubai", "Abu Dhabi", "Sharjah", "Ajman", "Ras Al Khaimah", "Umm Al Quwain", "Fujairah"];
 
 export const PURPOSES = [
@@ -218,5 +220,5 @@ export function requirementSummary(l) {
   return [labelOf(LEAD_PURPOSES, l.purpose), type, l.communities || l.emirate, budget].filter(Boolean).join(" · ");
 }
 
-const FILES_BASE =(import.meta.env.VITE_API_URI || "").replace(/\/api\/?$/, "");
-export const fileUrl = (propertyId, storedName) => `${FILES_BASE}/uploads/properties/${propertyId}/${storedName}`;
+export const fileUrl = (propertyId, storedName) =>
+  `${apiBase().replace(/\/api\/?$/, "")}/uploads/properties/${propertyId}/${storedName}`;
