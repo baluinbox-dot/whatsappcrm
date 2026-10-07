@@ -7,20 +7,21 @@ import { apiError } from "@/lib/apiClient";
 import { displayName } from "@/lib/time";
 import {
   EMIRATES, COMMUNITIES, PROPERTY_TYPES, BEDROOMS, LEAD_SOURCES, LEAD_PURPOSES, PRIORITIES, FINANCE, LEAD_COMPLETIONS,
-  MOVE_TIMELINES, BUYER_TYPES, NATIONALITIES,
+  MOVE_TIMELINES, BUYER_TYPES, NATIONALITIES, BUY_PLANS, AMENITIES,
 } from "@/lib/realEstate";
 
 const empty = {
   source: "WHATSAPP", purpose: "BUY", propertyType: "", emirate: "Dubai", communities: "",
-  bedroomsMin: "", bedroomsMax: "", budgetMin: "", budgetMax: "", finance: "", completion: "", moveTimeline: "",
+  bedroomsMin: "", bedroomsMax: "", budgetMin: "", budgetMax: "", finance: "", downPaymentMax: "", monthlyEmiMax: "", buyPlan: "", minAmenities: [], completion: "", moveTimeline: "",
   nationality: "", buyerType: "", requirements: "", priority: "WARM", assignedTo: "",
 };
 
-const NUMBER_FIELDS = ["bedroomsMin", "bedroomsMax", "budgetMin", "budgetMax", "assignedTo"];
+const NUMBER_FIELDS = ["bedroomsMin", "bedroomsMax", "budgetMin", "budgetMax", "downPaymentMax", "monthlyEmiMax", "assignedTo"];
 
 const fromLead = (l) => {
   const f = { ...empty };
   Object.keys(empty).forEach((k) => { if (l[k] !== null && l[k] !== undefined) f[k] = typeof l[k] === "number" ? String(l[k]) : l[k]; });
+  f.minAmenities = l.minAmenities ? l.minAmenities.split(",").map((a) => a.trim()).filter(Boolean) : [];
   return f;
 };
 
@@ -59,12 +60,15 @@ export default function LeadForm({ lead, customer, staff, isAdmin, onSaved, onCa
   }, [query, contactMode, picked, lead]);
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
+  const toggleAmenity = (a) => setForm((f) => ({
+    ...f, minAmenities: f.minAmenities.includes(a) ? f.minAmenities.filter((x) => x !== a) : [...f.minAmenities, a],
+  }));
   const setC = (k) => (e) => setContact((c) => ({ ...c, [k]: e.target.value }));
 
   const submit = async (e) => {
     e.preventDefault();
     if (saving) return;
-    const payload = { ...form };
+    const payload = { ...form, minAmenities: form.minAmenities.join(", ") };
     Object.keys(payload).forEach((k) => { if (payload[k] === "") payload[k] = null; });
     NUMBER_FIELDS.forEach((k) => { payload[k] = form[k] === "" ? null : Number(form[k]); });
     payload.source ??= "OTHER";
@@ -174,6 +178,13 @@ export default function LeadForm({ lead, customer, staff, isAdmin, onSaved, onCa
           {form.purpose === "BUY" && (
             <>
               <Field label="Finance"><Select value={form.finance} onChange={set("finance")} options={FINANCE} blank="—" /></Field>
+              <Field label="Down payment max (AED)">
+                <input type="number" min="0" value={form.downPaymentMax} onChange={set("downPaymentMax")} className={inputCls} />
+              </Field>
+              <Field label="Monthly EMI (AED)">
+                <input type="number" min="0" value={form.monthlyEmiMax} onChange={set("monthlyEmiMax")} className={inputCls} />
+              </Field>
+              <Field label="Self plan / Ready to buy"><Select value={form.buyPlan} onChange={set("buyPlan")} options={BUY_PLANS} blank="—" /></Field>
               <Field label="Ready / Off-Plan"><Select value={form.completion} onChange={set("completion")} options={LEAD_COMPLETIONS} blank="—" /></Field>
               <Field label="Buyer Type"><Select value={form.buyerType} onChange={set("buyerType")} options={BUYER_TYPES} blank="—" /></Field>
             </>
@@ -183,6 +194,22 @@ export default function LeadForm({ lead, customer, staff, isAdmin, onSaved, onCa
             <input value={form.nationality} onChange={set("nationality")} list="nationality-list" maxLength={50} className={inputCls} />
             <datalist id="nationality-list">{NATIONALITIES.map((n) => <option key={n} value={n} />)}</datalist>
           </Field>
+          <div className="md:col-span-2 lg:col-span-4">
+            <label className={labelCls}>Minimum amenities required</label>
+            <div className="flex flex-wrap gap-2">
+              {AMENITIES.map((a) => {
+                const on = form.minAmenities.includes(a);
+                return (
+                  <button type="button" key={a} onClick={() => toggleAmenity(a)}
+                    className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${on
+                      ? "border-blue-600 bg-blue-600 text-white"
+                      : "border-gray-300 dark:border-slate-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800"}`}>
+                    {a}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
           <Field label="Other Requirements" span={3}>
             <textarea value={form.requirements} onChange={set("requirements")} rows={2} maxLength={2000} className={inputCls}
               placeholder="e.g. high floor, sea view, near metro, pets allowed" />

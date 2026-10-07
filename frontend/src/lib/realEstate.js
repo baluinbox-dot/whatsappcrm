@@ -17,7 +17,14 @@ export const PROPERTY_TYPES = [
   { value: "WAREHOUSE", label: "Warehouse" },
   { value: "LAND", label: "Plot / Land" },
   { value: "BUILDING", label: "Whole Building" },
+  { value: "INDEPENDENT_HOUSE", label: "Independent House" },
+  { value: "COMMUNITY", label: "Community" },
+  { value: "VILLAGE", label: "Village" },
+  { value: "GATED_COMMUNITY", label: "Gated Community" },
 ];
+
+export const PROJECT_TYPES = PROPERTY_TYPES.filter((t) =>
+  ["APARTMENT", "COMMUNITY", "VILLAGE", "GATED_COMMUNITY", "TOWNHOUSE", "VILLA", "LAND", "BUILDING"].includes(t.value));
 
 export const PROPERTY_STATUSES = [
   { value: "AVAILABLE", label: "Available", cls: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300" },
@@ -50,7 +57,8 @@ export const AMENITIES = [
   "Balcony", "Maid Room", "Study Room", "Built-in Wardrobes", "Central A/C", "Kitchen Appliances",
   "Private Pool", "Shared Pool", "Private Garden", "Gym", "Covered Parking", "Security", "Concierge",
   "Children's Play Area", "BBQ Area", "Pets Allowed", "Sea View", "Burj Khalifa View", "Beach Access",
-  "Metro Nearby", "Chiller Free",
+  "Metro Nearby", "Chiller Free", "Clubhouse", "Jogging Track", "Tennis Court", "Park / Green Areas",
+  "Retail Outlets", "School Nearby", "Mosque", "24/7 Security",
 ];
 
 export const COMMUNITIES = {
@@ -134,6 +142,13 @@ export const LEAD_PURPOSES = [
 export const FINANCE = [
   { value: "CASH", label: "Cash" },
   { value: "MORTGAGE", label: "Mortgage" },
+  { value: "PRE_APPROVED", label: "Pre-approved" },
+  { value: "DEVELOPER", label: "Developer plan" },
+];
+
+export const BUY_PLANS = [
+  { value: "SELF_PLAN", label: "Self plan" },
+  { value: "READY_TO_BUY", label: "Ready to buy" },
 ];
 
 export const LEAD_COMPLETIONS = [

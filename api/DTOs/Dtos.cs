@@ -420,6 +420,14 @@ public class PropertyRow
     public string? AgentName { get; set; }
     public string? CoverFile { get; set; }
     public int ImageCount { get; set; }
+    public int? ProjectId { get; set; }
+    public int? ProjectSeq { get; set; }
+    public string? ProjectNo => ProjectSeq is null ? null : $"PRJ-{ProjectSeq:D5}";
+    public string? ProjectName { get; set; }
+    public string? ProjectDescription { get; set; }
+    public string? ProjectAmenities { get; set; }
+    public decimal? DownPaymentPct { get; set; }
+    public List<ProjectPaymentRow> ProjectPayments { get; set; } = new();
     public string? PublicCode { get; set; }
     public string? PublicUrl { get; set; }
     public DateTime CreatedAt { get; set; }
@@ -430,6 +438,8 @@ public class PropertyRow
 public class MatchRow : PropertyRow
 {
     public bool InPreferredArea { get; set; }
+    public decimal? DownPaymentAmount { get; set; }
+    public decimal? EstimatedEmi { get; set; }
     public DateTime? LastSharedAt { get; set; }
     public string? LastSharedChannel { get; set; }
 }
@@ -465,7 +475,7 @@ public class SavePropertyDto
 {
     [Required, MaxLength(200)] public string Title { get; set; } = string.Empty;
     [Required, RegularExpression("SALE|RENT")] public string Purpose { get; set; } = string.Empty;
-    [Required, RegularExpression("APARTMENT|VILLA|TOWNHOUSE|PENTHOUSE|DUPLEX|HOTEL_APT|OFFICE|SHOP|WAREHOUSE|LAND|BUILDING")]
+    [Required, RegularExpression(LeadCodes.PropertyTypes)]
     public string PropertyType { get; set; } = string.Empty;
     [Required, RegularExpression("READY|OFFPLAN")] public string Completion { get; set; } = "READY";
     [Required, RegularExpression("AVAILABLE|RESERVED|SOLD|RENTED|OFF_MARKET")] public string Status { get; set; } = "AVAILABLE";
@@ -499,6 +509,70 @@ public class SavePropertyDto
     public string? Description { get; set; }
     [Required, RegularExpression("T|F")] public string IsFeatured { get; set; } = "F";
     public int? AgentId { get; set; }
+    public int? ProjectId { get; set; }
+}
+
+// ---------- Projects ----------
+
+public class ProjectRow
+{
+    public int ProjectId { get; set; }
+    public int ProjectSeq { get; set; }
+    public string ProjectNo => $"PRJ-{ProjectSeq:D5}";
+    public string ProjectName { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public string ProjectType { get; set; } = "COMMUNITY";
+    public string? Developer { get; set; }
+    public string Emirate { get; set; } = string.Empty;
+    public string? Community { get; set; }
+    public string? MapUrl { get; set; }
+    public string Completion { get; set; } = "OFFPLAN";
+    public DateTime? HandoverDate { get; set; }
+    public int? CompletionPct { get; set; }
+    public string? Amenities { get; set; }
+    public decimal? DownPaymentPct { get; set; }
+    public string? PaymentPlan { get; set; }
+    public string IsActive { get; set; } = "T";
+    public int PropertyCount { get; set; }
+    public decimal? MinPrice { get; set; }
+    public decimal? MaxPrice { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+    public List<ProjectPaymentRow> Payments { get; set; } = new();
+}
+
+public class ProjectPaymentRow
+{
+    public int StepNo { get; set; }
+    public string Label { get; set; } = string.Empty;
+    public decimal PercentDue { get; set; }
+    public string? DueNote { get; set; }
+}
+
+public class SaveProjectPaymentDto
+{
+    [Required, MaxLength(100)] public string Label { get; set; } = string.Empty;
+    [Range(0, 100)] public decimal PercentDue { get; set; }
+    [MaxLength(100)] public string? DueNote { get; set; }
+}
+
+public class SaveProjectDto
+{
+    [Required, MaxLength(200)] public string ProjectName { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    [Required, RegularExpression(LeadCodes.PropertyTypes)] public string ProjectType { get; set; } = "COMMUNITY";
+    [MaxLength(150)] public string? Developer { get; set; }
+    [Required, MaxLength(30)] public string Emirate { get; set; } = string.Empty;
+    [MaxLength(150)] public string? Community { get; set; }
+    [MaxLength(500), Url] public string? MapUrl { get; set; }
+    [Required, RegularExpression("READY|OFFPLAN")] public string Completion { get; set; } = "OFFPLAN";
+    public DateTime? HandoverDate { get; set; }
+    [Range(0, 100)] public int? CompletionPct { get; set; }
+    [MaxLength(1000)] public string? Amenities { get; set; }
+    [Range(0, 100)] public decimal? DownPaymentPct { get; set; }
+    [MaxLength(100)] public string? PaymentPlan { get; set; }
+    [Required, RegularExpression("T|F")] public string IsActive { get; set; } = "T";
+    public List<SaveProjectPaymentDto> Payments { get; set; } = new();
 }
 
 // ---------- Services ----------
@@ -530,6 +604,7 @@ public class SaveServiceDto
 
 public static class LeadCodes
 {
+    public const string PropertyTypes = "APARTMENT|VILLA|TOWNHOUSE|PENTHOUSE|DUPLEX|HOTEL_APT|OFFICE|SHOP|WAREHOUSE|LAND|BUILDING|INDEPENDENT_HOUSE|COMMUNITY|VILLAGE|GATED_COMMUNITY";
     public const string Sources = "WHATSAPP|EMAIL|BAYUT|PROPERTY_FINDER|DUBIZZLE|WEBSITE|WALK_IN|REFERRAL|FACEBOOK|INSTAGRAM|GOOGLE|IMPORT|OTHER";
     public const string Statuses = "NEW|CONTACTED|QUALIFIED|VIEWING_SCHEDULED|VIEWING_DONE|NEGOTIATION|WON|NO_ANSWER|FOLLOW_UP_LATER|NOT_INTERESTED|LOST";
     public const string LostReasons = "BUDGET|BOUGHT_ELSEWHERE|NOT_REACHABLE|LOCATION|NOT_READY|JUNK|OTHER";
@@ -556,6 +631,10 @@ public class LeadRow
     public decimal? BudgetMin { get; set; }
     public decimal? BudgetMax { get; set; }
     public string? Finance { get; set; }
+    public decimal? DownPaymentMax { get; set; }
+    public decimal? MonthlyEmiMax { get; set; }
+    public string? BuyPlan { get; set; }
+    public string? MinAmenities { get; set; }
     public string? Completion { get; set; }
     public string? MoveTimeline { get; set; }
     public string? Nationality { get; set; }
@@ -590,7 +669,7 @@ public class SaveLeadDto
 
     [Required, RegularExpression(LeadCodes.Sources)] public string Source { get; set; } = "OTHER";
     [Required, RegularExpression("BUY|RENT")] public string Purpose { get; set; } = "BUY";
-    [RegularExpression("APARTMENT|VILLA|TOWNHOUSE|PENTHOUSE|DUPLEX|HOTEL_APT|OFFICE|SHOP|WAREHOUSE|LAND|BUILDING")]
+    [RegularExpression(LeadCodes.PropertyTypes)]
     public string? PropertyType { get; set; }
     [MaxLength(30)] public string? Emirate { get; set; }
     [MaxLength(500)] public string? Communities { get; set; }
@@ -598,7 +677,11 @@ public class SaveLeadDto
     [Range(0, 20)] public int? BedroomsMax { get; set; }
     [Range(0, 10000000000)] public decimal? BudgetMin { get; set; }
     [Range(0, 10000000000)] public decimal? BudgetMax { get; set; }
-    [RegularExpression("CASH|MORTGAGE")] public string? Finance { get; set; }
+    [RegularExpression("CASH|MORTGAGE|PRE_APPROVED|DEVELOPER")] public string? Finance { get; set; }
+    [Range(0, 10000000000)] public decimal? DownPaymentMax { get; set; }
+    [Range(0, 10000000000)] public decimal? MonthlyEmiMax { get; set; }
+    [RegularExpression("SELF_PLAN|READY_TO_BUY")] public string? BuyPlan { get; set; }
+    [MaxLength(1000)] public string? MinAmenities { get; set; }
     [RegularExpression("READY|OFFPLAN|ANY")] public string? Completion { get; set; }
     [RegularExpression("IMMEDIATE|1_3_MONTHS|3_6_MONTHS|6_PLUS|JUST_LOOKING")] public string? MoveTimeline { get; set; }
     [MaxLength(50)] public string? Nationality { get; set; }

@@ -20,13 +20,15 @@ public class PropertiesController : ControllerBase
     };
 
     private readonly IPropertyRepository _repo;
+    private readonly IProjectRepository _projects;
     private readonly IUserRepository _users;
     private readonly UploadStorage _storage;
     private readonly PublicLinks _links;
 
-    public PropertiesController(IPropertyRepository repo, IUserRepository users, UploadStorage storage, PublicLinks links)
+    public PropertiesController(IPropertyRepository repo, IProjectRepository projects, IUserRepository users, UploadStorage storage, PublicLinks links)
     {
         _repo = repo;
+        _projects = projects;
         _users = users;
         _storage = storage;
         _links = links;
@@ -177,6 +179,14 @@ public class PropertiesController : ControllerBase
         {
             dto.PaymentPlan = null;
             dto.CompletionPct = null;
+        }
+
+        if (dto.ProjectId is not null)
+        {
+            var project = await _projects.GetByIdAsync(User.CompanyId(), dto.ProjectId.Value);
+            if (project is null) return "Project not found.";
+            dto.Emirate = project.Emirate;
+            dto.Completion = project.Completion;
         }
 
         if (dto.Price <= 0) return "Enter the price in AED.";

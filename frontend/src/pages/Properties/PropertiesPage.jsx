@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Building2, Plus, RefreshCw, Search, X, Pencil, Trash2, ImageOff, Star, MapPin, ExternalLink, Link2 } from "lucide-react";
-import { PropertyService } from "@/ServiceLayer/PropertyService/PropertyService";
+import { PropertyService, ProjectService } from "@/ServiceLayer/PropertyService/PropertyService";
 import { StaffService } from "@/ServiceLayer/AuthService/AuthService";
 import { useAuth } from "@/context/AuthContext";
 import { Alerts, DeleteModal, inputCls, labelCls } from "@/components/common/ui";
@@ -19,10 +19,10 @@ const emptyForm = {
   price: "", rentFrequency: "YEARLY", cheques: "", serviceCharge: "", commissionPct: "",
   handoverDate: "", paymentPlan: "", completionPct: "",
   permitNo: "", titleDeedNo: "", ownerName: "", ownerMobile: "", ownerEmail: "",
-  furnishing: "", amenities: [], description: "", isFeatured: "F", agentId: "",
+  furnishing: "", amenities: [], description: "", isFeatured: "F", agentId: "", projectId: "",
 };
 
-const NUMBER_FIELDS = ["bedrooms", "bathrooms", "buaSqft", "plotSqft", "parking", "price", "cheques", "serviceCharge", "commissionPct", "completionPct", "agentId"];
+const NUMBER_FIELDS = ["bedrooms", "bathrooms", "buaSqft", "plotSqft", "parking", "price", "cheques", "serviceCharge", "commissionPct", "completionPct", "agentId", "projectId"];
 
 const toForm = (p) => {
   const f = { ...emptyForm };
@@ -72,6 +72,7 @@ export default function PropertiesPage() {
   const { isAdmin } = useAuth();
   const [rows, setRows] = useState([]);
   const [staff, setStaff] = useState([]);
+  const [projects, setProjects] = useState([]);
   const [filters, setFilters] = useState({ search: "", purpose: "", propertyType: "", emirate: "", status: "" });
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -92,6 +93,7 @@ export default function PropertiesPage() {
 
   useEffect(() => {
     load();
+    ProjectService.getAll().then((r) => setProjects(r.filter((p) => p.isActive === "T"))).catch(() => {});
     if (isAdmin) StaffService.getAll().then((r) => setStaff(r.filter((s) => s.isActive === "T"))).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -103,6 +105,7 @@ export default function PropertiesPage() {
   };
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
+  const project = projects.find((p) => String(p.projectId) === String(form.projectId));
   const toggleAmenity = (a) => setForm((f) => ({
     ...f, amenities: f.amenities.includes(a) ? f.amenities.filter((x) => x !== a) : [...f.amenities, a],
   }));
@@ -129,13 +132,15 @@ export default function PropertiesPage() {
     if (!form.title.trim()) { setError("Title is required."); return; }
     if (!form.price || Number(form.price) <= 0) { setError("Enter the price in AED."); return; }
     setSaving(true); setError("");
+    const payload = toPayload(form);
+    if (project) Object.assign(payload, { emirate: project.emirate, completion: project.completion });
     try {
       if (editing) {
-        const saved = await PropertyService.update(editing.propertyId, toPayload(form));
+        const saved = await PropertyService.update(editing.propertyId, payload);
         setSuccess(`${saved.refNo} updated.`);
         closeForm();
       } else {
-        const saved = await PropertyService.create(toPayload(form));
+        const saved = await PropertyService.create(payload);
         // Stay in the form so photos can be added straight away.
         setEditing(saved); setForm(toForm(saved));
         setSuccess(`${saved.refNo} saved. Now add photos, floor plans and the brochure below.`);
@@ -221,9 +226,21 @@ export default function PropertiesPage() {
             <Field label="Title *" span={2}>
               <input value={form.title} onChange={set("title")} maxLength={200} className={inputCls} placeholder="e.g. Spacious 2BR with Marina View" />
             </Field>
+            <Field label="Project" span={2}>
+              <select value={form.projectId} onChange={set("projectId")} className={inputCls}>
+                <option value="">No project (stand-alone listing)</option>
+                {projects.map((p) => <option key={p.projectId} value={p.projectId}>{p.projectNo} – {p.projectName}</option>)}
+                {editing?.projectId && !project && <option value={editing.projectId}>{editing.projectNo} – {editing.projectName} (inactive)</option>}
+              </select>
+              {project && (
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  Location, developer, handover and payment plan come from the project. Amenities are added to the project's.
+                </p>
+              )}
+            </Field>
             <Field label="Purpose *"><Select value={form.purpose} onChange={set("purpose")} options={PURPOSES} /></Field>
             <Field label="Property Type *"><Select value={form.propertyType} onChange={set("propertyType")} options={PROPERTY_TYPES} /></Field>
-            <Field label="Ready / Off-Plan"><Select value={form.completion} onChange={set("completion")} options={COMPLETIONS} /></Field>
+            {!project && <Field label="Ready / Off-Plan"><Select value={form.completion} onChange={set("completion")} options={COMPLETIONS} /></Field>}
             <Field label="Status"><Select value={form.status} onChange={set("status")} options={PROPERTY_STATUSES} /></Field>
             <Field label="Featured">
               <Select value={form.isFeatured} onChange={set("isFeatured")} options={[{ value: "F", label: "No" }, { value: "T", label: "Yes" }]} />
@@ -241,7 +258,7 @@ export default function PropertiesPage() {
             )}
           </Section>
 
-          <Section title="Location">
+          {!project && <Section title="Location">
             <Field label="Emirate *">
               <select value={form.emirate} onChange={set("emirate")} className={inputCls}>
                 {EMIRATES.map((e) => <option key={e} value={e}>{e}</option>)}
@@ -262,7 +279,7 @@ export default function PropertiesPage() {
             <Field label="Google Maps Link" span={4}>
               <input value={form.mapUrl} onChange={set("mapUrl")} maxLength={500} className={inputCls} placeholder="https://maps.google.com/..." />
             </Field>
-          </Section>
+          </Section>}
 
           <Section title="Size & Rooms">
             <Field label="Bedrooms"><Select value={form.bedrooms} onChange={set("bedrooms")} options={BEDROOMS} blank="—" /></Field>
@@ -317,7 +334,7 @@ export default function PropertiesPage() {
             </Field>
           </Section>
 
-          {isOffPlan && (
+          {isOffPlan && !project && (
             <Section title="Off-Plan">
               <Field label="Handover Date">
                 <input type="date" value={form.handoverDate} onChange={set("handoverDate")} className={inputCls} />

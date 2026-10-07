@@ -22,3 +22,11 @@ export const ServiceCatalogService = {
   update: (id, payload) => client.put(`/services/${id}`, payload).then((r) => r.data),
   remove: (id) => client.delete(`/services/${id}`).then((r) => r.data),
 };
+
+export const ProjectService = {
+  getAll: (params) => client.get("/projects", { params }).then((r) => r.data),
+  get: (id) => client.get(`/projects/${id}`).then((r) => r.data),
+  create: (payload) => client.post("/projects", payload).then((r) => r.data),
+  update: (id, payload) => client.put(`/projects/${id}`, payload).then((r) => r.data),
+  remove: (id) => client.delete(`/projects/${id}`).then((r) => r.data),
+};

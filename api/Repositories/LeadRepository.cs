@@ -104,7 +104,8 @@ public class LeadRepository : ILeadRepository
     private const string RequirementColumns = @"
         source = @Source, purpose = @Purpose, property_type = @PropertyType, emirate = @Emirate, communities = @Communities,
         bedrooms_min = @BedroomsMin, bedrooms_max = @BedroomsMax, budget_min = @BudgetMin, budget_max = @BudgetMax,
-        finance = @Finance, completion = @Completion, move_timeline = @MoveTimeline, nationality = @Nationality,
+        finance = @Finance, down_payment_max = @DownPaymentMax, monthly_emi_max = @MonthlyEmiMax, buy_plan = @BuyPlan,
+        min_amenities = @MinAmenities, completion = @Completion, move_timeline = @MoveTimeline, nationality = @Nationality,
         buyer_type = @BuyerType, requirements = @Requirements, priority = @Priority";
 
     private static DynamicParameters Params(SaveLeadDto dto, object extra)

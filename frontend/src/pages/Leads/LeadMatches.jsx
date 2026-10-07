@@ -5,7 +5,7 @@ import { inputCls } from "@/components/common/ui";
 import { apiError } from "@/lib/apiClient";
 import { formatDate } from "@/lib/utils";
 import { toDate } from "@/lib/time";
-import { PROPERTY_TYPES, labelOf, bedroomsLabel, formatNumber, priceLabel, fileUrl } from "@/lib/realEstate";
+import { PROPERTY_TYPES, labelOf, bedroomsLabel, formatNumber, formatAed, priceLabel, fileUrl } from "@/lib/realEstate";
 
 const MAX_SHARE = 10;
 
@@ -53,7 +53,7 @@ export default function LeadMatches({ lead, onShared, onError }) {
         <button onClick={load} className="rounded p-1 text-gray-400 hover:text-gray-600" title="Refresh"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /></button>
       </div>
       <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-        Available {lead.purpose === "RENT" ? "rentals" : "sales"} that fit the type, emirate, bedrooms and budget (±10%). Preferred areas first.
+        Available {lead.purpose === "RENT" ? "rentals" : "sales"} that fit the type, emirate, bedrooms and budget (±10%){lead.purpose === "BUY" ? ", down payment, EMI, finance and required amenities" : ""}. Preferred areas first. EMI is estimated at 4.5% over 25 years.
       </p>
 
       {rows.length === 0 && !loading && (
@@ -84,12 +84,15 @@ export default function LeadMatches({ lead, onShared, onError }) {
                     )}
                   </div>
                   <div className="truncate text-sm font-medium text-gray-900 dark:text-white">{p.title}</div>
+                  {p.projectName && <div className="truncate text-xs font-medium text-blue-600 dark:text-blue-400">{p.projectNo} · {p.projectName}</div>}
                   <div className="text-xs text-gray-500 dark:text-gray-400">
                     {[bedroomsLabel(p.bedrooms), labelOf(PROPERTY_TYPES, p.propertyType), p.buaSqft && `${formatNumber(p.buaSqft)} sq.ft`].filter(Boolean).join(" · ")}
                     {" · "}{[p.community, p.emirate].filter(Boolean).join(", ")}
                   </div>
                   <div className="mt-0.5 flex flex-wrap items-center gap-x-3">
                     <span className="text-sm font-semibold text-gray-900 dark:text-white whitespace-nowrap">{priceLabel(p)}</span>
+                    {p.downPaymentAmount && <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">Down {formatAed(p.downPaymentAmount)} ({p.downPaymentPct}%)</span>}
+                    {p.estimatedEmi && lead.purpose === "BUY" && <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">EMI ~{formatAed(p.estimatedEmi)}/mo</span>}
                     {p.publicUrl && (
                       <a href={p.publicUrl} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}
                         className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline">

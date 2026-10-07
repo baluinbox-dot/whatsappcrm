@@ -13,7 +13,8 @@ public static class PropertyText
     {
         ["APARTMENT"] = "Apartment", ["VILLA"] = "Villa", ["TOWNHOUSE"] = "Townhouse", ["PENTHOUSE"] = "Penthouse",
         ["DUPLEX"] = "Duplex", ["HOTEL_APT"] = "Hotel Apartment", ["OFFICE"] = "Office", ["SHOP"] = "Shop",
-        ["WAREHOUSE"] = "Warehouse", ["LAND"] = "Plot", ["BUILDING"] = "Building"
+        ["WAREHOUSE"] = "Warehouse", ["LAND"] = "Plot", ["BUILDING"] = "Building",
+        ["INDEPENDENT_HOUSE"] = "Independent House", ["COMMUNITY"] = "Community", ["VILLAGE"] = "Village", ["GATED_COMMUNITY"] = "Gated Community"
     };
 
     public static readonly Dictionary<string, string> Furnishings = new()
@@ -44,6 +45,14 @@ public static class PropertyText
         : "Off-plan" + (p.HandoverDate is not null ? $"{sep}handover {p.HandoverDate:MMM yyyy}" : "")
                      + (p.PaymentPlan is not null ? $"{sep}payment plan {p.PaymentPlan}" : "");
 
+    public static string? PricePlan(PropertyRow p, string sep)
+    {
+        var parts = new List<string>();
+        if (p.DownPaymentPct is > 0) parts.Add($"{p.DownPaymentPct.Value.ToString("0.##", En)}% down payment ({Aed(Math.Round(p.Price * p.DownPaymentPct.Value / 100m))})");
+        parts.AddRange(p.ProjectPayments.Select(s => $"{s.PercentDue.ToString("0.##", En)}% {s.Label}{(string.IsNullOrWhiteSpace(s.DueNote) ? "" : $" ({s.DueNote})")}"));
+        return parts.Count == 0 ? null : string.Join(sep, parts);
+    }
+
     public static string WhatsAppCaption(PropertyRow p)
     {
         var sb = new StringBuilder();
@@ -53,6 +62,8 @@ public static class PropertyText
         sb.AppendLine($"Price: *{Price(p)}*{(p.Purpose == "RENT" && p.Cheques is not null ? $" ({p.Cheques} cheques)" : "")}");
         if (Size(p) is { } size) sb.AppendLine($"Size: {size}{(p.Bathrooms is not null ? $" | {p.Bathrooms} bath" : "")}");
         if (OffPlan(p, " | ") is { } offPlan) sb.AppendLine(offPlan);
+        if (p.ProjectName is not null) sb.AppendLine($"Project: {p.ProjectName}");
+        if (p.DownPaymentPct is > 0) sb.AppendLine($"Down payment: {p.DownPaymentPct.Value.ToString("0.##", En)}%");
         if (p.Furnishing is not null) sb.AppendLine(Furnishings.GetValueOrDefault(p.Furnishing, p.Furnishing));
         sb.AppendLine($"Ref: {p.RefNo}");
         if (p.PublicUrl is not null) sb.Append($"Photos & details: {p.PublicUrl}");
@@ -76,6 +87,15 @@ public static class PropertyText
             sb.AppendLine($"   Price: {Price(p)}");
             if (Size(p) is { } size) sb.AppendLine($"   Size: {size}");
             if (OffPlan(p, ", ") is { } offPlan) sb.AppendLine($"   {offPlan}");
+            if (p.ProjectName is not null)
+            {
+                sb.AppendLine($"   Project: {p.ProjectName} ({p.ProjectNo}){(p.Developer is not null ? $" by {p.Developer}" : "")}");
+                if (!string.IsNullOrWhiteSpace(p.ProjectDescription))
+                    sb.AppendLine($"   {(p.ProjectDescription.Length > 300 ? p.ProjectDescription[..300].TrimEnd() + "..." : p.ProjectDescription).ReplaceLineEndings(" ")}");
+            }
+            var amenities = string.Join(", ", new[] { p.ProjectAmenities, p.Amenities }.Where(x => !string.IsNullOrWhiteSpace(x)));
+            if (amenities.Length > 0) sb.AppendLine($"   Amenities: {amenities}");
+            if (PricePlan(p, "; ") is { } plan) sb.AppendLine($"   Payment plan: {plan}");
             if (p.PublicUrl is not null) sb.AppendLine($"   Photos & details: {p.PublicUrl}");
         }
         sb.AppendLine();

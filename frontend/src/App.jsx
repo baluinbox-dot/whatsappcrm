@@ -1,7 +1,7 @@
 import { Routes, Route, Navigate, NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, MessagesSquare, Contact, Users, NotebookPen, MessageCircle, ShieldAlert, LogOut, Mail, AtSign,
-  Building2, BriefcaseBusiness, Target, CalendarClock, BarChart3,
+  Building2, BriefcaseBusiness, Target, CalendarClock, BarChart3, Landmark,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import LoginPage from "@/pages/Auth/LoginPage";
@@ -15,6 +15,7 @@ import EmailInboxPage from "@/pages/EmailInbox/EmailInboxPage";
 import EmailSettingsPage from "@/pages/EmailSettings/EmailSettingsPage";
 import SuperAdminPage from "@/pages/SuperAdmin/SuperAdminPage";
 import PropertiesPage from "@/pages/Properties/PropertiesPage";
+import ProjectsPage from "@/pages/Projects/ProjectsPage";
 import ServicesPage from "@/pages/Services/ServicesPage";
 import LeadsPage from "@/pages/Leads/LeadsPage";
 import LeadDetailPage from "@/pages/Leads/LeadDetailPage";
@@ -30,6 +31,7 @@ const NAV = [
   { to: "/leads", label: "Leads", icon: Target, access: "all" },
   { to: "/follow-ups", label: "Follow-ups", icon: CalendarClock, access: "all" },
   { to: "/customers", label: "Customers", icon: Contact, access: "all" },
+  { to: "/projects", label: "Projects", icon: Landmark, access: "all" },
   { to: "/properties", label: "Properties", icon: Building2, access: "all" },
   { to: "/services", label: "Services", icon: BriefcaseBusiness, access: "all" },
   { to: "/reports", label: "Reports", icon: BarChart3, access: "all" },
@@ -143,6 +145,7 @@ export default function App() {
       <Route path="/leads/import" element={page(<ImportLeadsPage />, "admin")} />
       <Route path="/leads/:id" element={page(<LeadDetailPage />)} />
       <Route path="/follow-ups" element={page(<FollowUpsPage />)} />
+      <Route path="/projects" element={page(<ProjectsPage />)} />
       <Route path="/properties" element={page(<PropertiesPage />)} />
       <Route path="/services" element={page(<ServicesPage />)} />
       <Route path="/reports" element={page(<ReportsPage />)} />

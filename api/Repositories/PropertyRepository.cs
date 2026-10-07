@@ -35,13 +35,16 @@ public class PropertyRepository : IPropertyRepository
 
     private const string Select = @"
         SELECT p.*, a.full_name AS agent_name,
+               pr.project_seq, pr.project_name, pr.description AS project_description,
+               pr.amenities AS project_amenities, pr.down_payment_pct,
                (SELECT TOP 1 f.stored_name FROM dbo.wsm_property_files f
                  WHERE f.property_id = p.property_id AND f.file_kind = 'IMAGE'
                  ORDER BY CASE WHEN f.is_cover = 'T' THEN 0 ELSE 1 END, f.file_id) AS cover_file,
                (SELECT COUNT(*) FROM dbo.wsm_property_files f
                  WHERE f.property_id = p.property_id AND f.file_kind = 'IMAGE') AS image_count
         FROM dbo.wsm_properties p
-        LEFT JOIN dbo.wsm_users a ON a.user_id = p.agent_id";
+        LEFT JOIN dbo.wsm_users a ON a.user_id = p.agent_id
+        LEFT JOIN dbo.wsm_projects pr ON pr.project_id = p.project_id";
 
     private static string? Blank(string? s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim();
 
@@ -79,6 +82,10 @@ public class PropertyRepository : IPropertyRepository
         row.Files = (await db.QueryAsync<PropertyFileRow>(@"
             SELECT * FROM dbo.wsm_property_files WHERE property_id = @propertyId
             ORDER BY file_kind, CASE WHEN is_cover = 'T' THEN 0 ELSE 1 END, file_id", new { propertyId })).ToList();
+        if (row.ProjectId is not null)
+            row.ProjectPayments = (await db.QueryAsync<ProjectPaymentRow>(
+                "SELECT step_no, label, percent_due, due_note FROM dbo.wsm_project_payments WHERE project_id = @ProjectId ORDER BY step_no",
+                new { row.ProjectId })).ToList();
         return row;
     }
 
@@ -90,7 +97,7 @@ public class PropertyRepository : IPropertyRepository
         service_charge = @ServiceCharge, commission_pct = @CommissionPct, handover_date = @HandoverDate,
         payment_plan = @PaymentPlan, completion_pct = @CompletionPct, permit_no = @PermitNo, title_deed_no = @TitleDeedNo,
         owner_name = @OwnerName, owner_mobile = @OwnerMobile, owner_email = @OwnerEmail, furnishing = @Furnishing,
-        amenities = @Amenities, description = @Description, is_featured = @IsFeatured, agent_id = @AgentId";
+        amenities = @Amenities, description = @Description, is_featured = @IsFeatured, agent_id = @AgentId, project_id = @ProjectId";
 
     public async Task<PropertyRow?> CreateAsync(int companyId, SavePropertyDto dto, int userId)
     {
@@ -106,7 +113,8 @@ public class PropertyRepository : IPropertyRepository
                 companyId, userId, dto.Title, dto.Purpose, dto.PropertyType, dto.Emirate, dto.Price,
                 publicCode = Guid.NewGuid().ToString("N")[..12]
             });
-        await db.ExecuteAsync($"UPDATE dbo.wsm_properties SET {Columns} WHERE property_id = @id", Params(dto, new { id }));
+        await db.ExecuteAsync($"UPDATE dbo.wsm_properties SET {Columns} WHERE property_id = @id; {ProjectRepository.SyncProperties} WHERE p.property_id = @id",
+            Params(dto, new { id }));
         return await GetByIdAsync(companyId, id);
     }
 
@@ -115,7 +123,8 @@ public class PropertyRepository : IPropertyRepository
         using var db = _factory.CreateConnection();
         var n = await db.ExecuteAsync($@"
             UPDATE dbo.wsm_properties SET {Columns}, updated_by = @userId, updated_at = SYSUTCDATETIME()
-            WHERE company_id = @companyId AND property_id = @propertyId",
+            WHERE company_id = @companyId AND property_id = @propertyId;
+            {ProjectRepository.SyncProperties} WHERE p.property_id = @propertyId",
             Params(dto, new { companyId, propertyId, userId }));
         return n == 0 ? null : await GetByIdAsync(companyId, propertyId);
     }
@@ -177,13 +186,20 @@ public class PropertyRepository : IPropertyRepository
     public async Task<IEnumerable<MatchRow>> MatchAsync(int companyId, LeadRow lead)
     {
         using var db = _factory.CreateConnection();
+        // A villa and an independent house are the same thing to a buyer.
+        var types = lead.PropertyType switch
+        {
+            null => Array.Empty<string>(),
+            "VILLA" or "INDEPENDENT_HOUSE" => new[] { "VILLA", "INDEPENDENT_HOUSE" },
+            var t => new[] { t }
+        };
         var rows = (await db.QueryAsync<MatchRow>(Select.Replace("SELECT p.*,", @"
             SELECT p.*,
                    (SELECT TOP 1 s.shared_at FROM dbo.wsm_lead_shares s WHERE s.lead_id = @leadId AND s.property_id = p.property_id ORDER BY s.shared_at DESC) AS last_shared_at,
                    (SELECT TOP 1 s.channel FROM dbo.wsm_lead_shares s WHERE s.lead_id = @leadId AND s.property_id = p.property_id ORDER BY s.shared_at DESC) AS last_shared_channel,") + @"
             CROSS APPLY (SELECT CASE WHEN p.purpose = 'RENT' AND p.rent_frequency = 'MONTHLY' THEN p.price * 12 ELSE p.price END AS yearly) y
             WHERE p.company_id = @companyId AND p.status = 'AVAILABLE' AND p.purpose = @purpose
-              AND (@type IS NULL OR p.property_type = @type)
+              AND (@hasType = 0 OR p.property_type IN @types OR pr.project_type IN @types)
               AND (@emirate IS NULL OR p.emirate = @emirate)
               AND (@completion IS NULL OR p.completion = @completion)
               AND (@bedsMin IS NULL OR p.bedrooms IS NULL OR p.bedrooms >= @bedsMin)
@@ -194,11 +210,13 @@ public class PropertyRepository : IPropertyRepository
             {
                 companyId, leadId = lead.LeadId,
                 purpose = lead.Purpose == "RENT" ? "RENT" : "SALE",
-                type = lead.PropertyType, emirate = lead.Emirate,
+                hasType = types.Length > 0 ? 1 : 0, types, emirate = lead.Emirate,
                 completion = lead.Completion is "READY" or "OFFPLAN" ? lead.Completion : null,
                 bedsMin = lead.BedroomsMin, bedsMax = lead.BedroomsMax,
                 budgetMin = lead.BudgetMin, budgetMax = lead.BudgetMax
             })).ToList();
+
+        rows = ApplyBuyerRules(rows, lead);
 
         var areas = (lead.Communities ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         foreach (var r in rows)
@@ -214,6 +232,46 @@ public class PropertyRepository : IPropertyRepository
             .ThenBy(r => target is null ? 0 : Math.Abs((r.Purpose == "RENT" && r.RentFrequency == "MONTHLY" ? r.Price * 12 : r.Price) - target.Value))
             .Take(50)
             .ToList();
+    }
+
+    private const decimal AssumedRate = 0.045m;
+    private const int AssumedYears = 25;
+    private const decimal DefaultDownPct = 20m;
+
+    // Down payment, EMI, developer finance and minimum amenities. A rule only applies when the lead set it and the
+    // listing has the data to check it against.
+    private static List<MatchRow> ApplyBuyerRules(List<MatchRow> rows, LeadRow lead)
+    {
+        if (lead.Purpose != "BUY") return rows;
+        var needed = SplitList(lead.MinAmenities);
+        var kept = new List<MatchRow>();
+        foreach (var r in rows)
+        {
+            var downPct = r.DownPaymentPct ?? DefaultDownPct;
+            r.DownPaymentAmount = r.DownPaymentPct is null ? null : Math.Round(r.Price * r.DownPaymentPct.Value / 100m);
+            r.EstimatedEmi = Emi(r.Price * (100m - downPct) / 100m);
+
+            if (lead.DownPaymentMax is not null && r.DownPaymentAmount is not null && r.DownPaymentAmount > lead.DownPaymentMax) continue;
+            if (lead.MonthlyEmiMax is not null && lead.Finance != "CASH" && r.EstimatedEmi > lead.MonthlyEmiMax) continue;
+            if (lead.Finance == "DEVELOPER" && (r.ProjectId is null || (r.DownPaymentPct is null && r.PaymentPlan is null))) continue;
+            if (needed.Count > 0)
+            {
+                var has = SplitList(r.Amenities).Concat(SplitList(r.ProjectAmenities)).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                if (!needed.All(has.Contains)) continue;
+            }
+            kept.Add(r);
+        }
+        return kept;
+    }
+
+    private static List<string> SplitList(string? s) =>
+        (s ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
+
+    private static decimal Emi(decimal loan)
+    {
+        var r = (double)AssumedRate / 12;
+        var n = AssumedYears * 12;
+        return Math.Round((decimal)((double)loan * r / (1 - Math.Pow(1 + r, -n))));
     }
 
     public async Task<PublicPropertyView?> GetPublicAsync(string publicCode)

@@ -12,7 +12,7 @@ import { Alerts, Breadcrumb, DeleteModal, inputCls, labelCls } from "@/component
 import { apiError } from "@/lib/apiClient";
 import { dateTime, displayName, toDate } from "@/lib/time";
 import {
-  LEAD_STATUSES, LEAD_SOURCES, LOST_REASONS, FOLLOW_UP_TYPES, CALL_OUTCOMES, FINANCE, LEAD_COMPLETIONS, MOVE_TIMELINES,
+  LEAD_STATUSES, LEAD_SOURCES, LOST_REASONS, FOLLOW_UP_TYPES, CALL_OUTCOMES, FINANCE, BUY_PLANS, LEAD_COMPLETIONS, MOVE_TIMELINES,
   BUYER_TYPES, PROPERTY_TYPES, labelOf, bedroomsLabel, formatAed, requirementSummary,
 } from "@/lib/realEstate";
 import LeadForm from "./LeadForm";
@@ -270,6 +270,10 @@ export default function LeadDetailPage() {
             <Info label="Budget" value={lead.budgetMin || lead.budgetMax
               ? `${lead.budgetMin ? formatAed(lead.budgetMin) : "Any"} – ${lead.budgetMax ? formatAed(lead.budgetMax) : "Any"}` : null} />
             <Info label="Finance" value={labelOf(FINANCE, lead.finance)} />
+            <Info label="Down payment max" value={lead.downPaymentMax ? formatAed(lead.downPaymentMax) : null} />
+            <Info label="Monthly EMI" value={lead.monthlyEmiMax ? formatAed(lead.monthlyEmiMax) : null} />
+            <Info label="Plan" value={labelOf(BUY_PLANS, lead.buyPlan)} />
+            <Info label="Min. amenities" value={lead.minAmenities} />
             <Info label="Ready / Off-Plan" value={labelOf(LEAD_COMPLETIONS, lead.completion)} />
             <Info label="Timeline" value={labelOf(MOVE_TIMELINES, lead.moveTimeline)} />
             <Info label="Buyer Type" value={labelOf(BUYER_TYPES, lead.buyerType)} />

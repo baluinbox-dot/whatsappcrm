@@ -81,6 +81,7 @@ builder.Services.AddScoped<IMailboxService, MailboxService>();
 builder.Services.AddHostedService<EmailPollingService>();
 builder.Services.AddScoped<IPropertyRepository, PropertyRepository>();
 builder.Services.AddScoped<IServiceRepository, ServiceRepository>();
+builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
 builder.Services.AddSingleton<UploadStorage>();
 builder.Services.AddSingleton<PublicLinks>();
 builder.Services.AddScoped<ILeadRepository, LeadRepository>();
