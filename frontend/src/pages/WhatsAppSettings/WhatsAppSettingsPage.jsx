@@ -71,7 +71,7 @@ export default function WhatsAppSettingsPage() {
   const copy = (text) => navigator.clipboard?.writeText(text).then(() => setSuccess("Copied to clipboard."));
 
   const verified = settings?.isVerified === "T";
-  const webhookUrl = settings?.companyCode ? `${apiBase()}/whatsapp/webhook/${settings.companyCode}` : "";
+  const webhookUrl = settings?.companyCode ? `${new URL(apiBase(), window.location.origin).href}/whatsapp/webhook/${settings.companyCode}` : "";
 
   return (
     <div className="p-6 space-y-4">
