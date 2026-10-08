@@ -69,8 +69,8 @@ export default function ServicesPage() {
   const changeCategory = (c) => { setCategory(c); load(c); };
 
   return (
-    <div className="p-6 space-y-4">
-      <div className="flex items-start justify-between gap-4">
+    <div className="p-4 sm:p-6 space-y-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="rounded-xl bg-blue-600/10 p-2"><BriefcaseBusiness className="h-6 w-6 text-blue-600" /></div>
           <div>

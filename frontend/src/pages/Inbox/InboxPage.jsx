@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   MessagesSquare, RefreshCw, Search, Send, Bot, Check, CheckCheck, AlertCircle, Clock, Loader2, Mail, Phone, UserCheck,
+  ArrowLeft,
 } from "lucide-react";
 import { InboxService, CustomerService } from "@/ServiceLayer/WhatsAppService/WhatsAppService";
 import { StaffService } from "@/ServiceLayer/AuthService/AuthService";
@@ -144,8 +145,8 @@ export default function InboxPage() {
     : [{ key: "", label: "My Chats" }, { key: "unread", label: "Unread" }];
 
   return (
-    <div className="p-6 space-y-4 h-full flex flex-col">
-      <div className="flex items-start justify-between gap-4">
+    <div className="p-4 sm:p-6 space-y-4 h-full flex flex-col">
+      <div className={`flex flex-wrap items-start justify-between gap-3 ${activeId ? "hidden md:flex" : ""}`}>
         <div className="flex items-center gap-3">
           <div className="rounded-xl bg-green-600/10 p-2"><MessagesSquare className="h-6 w-6 text-green-600" /></div>
           <div>
@@ -163,7 +164,7 @@ export default function InboxPage() {
       <Alerts success={success} error={error} onClearSuccess={() => setSuccess("")} onClearError={() => setError("")} />
 
       <div className="flex-1 min-h-[520px] grid grid-cols-1 md:grid-cols-[340px_1fr] bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm overflow-hidden">
-        <div className="flex flex-col min-h-0 border-b md:border-b-0 md:border-r border-gray-200 dark:border-slate-800">
+        <div className={`${activeId ? "hidden md:flex" : "flex"} flex-col min-h-0 md:border-r border-gray-200 dark:border-slate-800`}>
           <div className="p-3 space-y-2 border-b border-gray-200 dark:border-slate-800">
             <div className="flex gap-1 rounded-lg bg-gray-100 dark:bg-slate-800 p-1">
               {tabs.map((t) => (
@@ -219,7 +220,7 @@ export default function InboxPage() {
           </ul>
         </div>
 
-        <div className="flex flex-col min-h-0">
+        <div className={`${activeId ? "flex" : "hidden md:flex"} flex-col min-h-0`}>
           {!activeId ? (
             <div className="flex-1 flex flex-col items-center justify-center text-gray-400 py-16">
               <MessagesSquare className="h-10 w-10 mb-2" />
@@ -229,6 +230,10 @@ export default function InboxPage() {
             <div className="flex-1 flex items-center justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-gray-400" /></div>
           ) : (
             <>
+              <button type="button" onClick={() => setActiveId(null)}
+                className="md:hidden flex items-center gap-1.5 border-b border-gray-200 dark:border-slate-800 px-4 py-2.5 text-sm font-medium text-blue-600 dark:text-blue-400">
+                <ArrowLeft className="h-4 w-4" /> All chats
+              </button>
               <div className="px-5 py-3 border-b border-gray-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
                 <div className="min-w-0">
                   <div className="font-semibold text-gray-900 dark:text-white">{displayName(c)}</div>

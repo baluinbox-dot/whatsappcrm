@@ -2,9 +2,10 @@ import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Mail, Lock, Eye, EyeOff, ArrowRight, Loader2, ShieldCheck, User, Phone, Building2,
-  CheckCircle2, RefreshCw, ArrowLeft, MessageCircle, Database,
+  CheckCircle2, RefreshCw, ArrowLeft, MessageCircle, Database, Sun, Moon,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useTheme } from "@/context/ThemeContext";
 import { AuthService } from "@/ServiceLayer/AuthService/AuthService";
 import { apiError, DB_OPTIONS, getDb, setDb } from "@/lib/apiClient";
 
@@ -454,11 +455,17 @@ export default function LoginPage() {
   const resetToken = searchParams.get("reset");
   const requested = searchParams.get("tab");
   const [tab, setTab] = useState(TABS.some((t) => t.key === requested) ? requested : "admin");
+  const { isDark, toggleTheme } = useTheme();
   const [db, setDbState] = useState(getDb);
   const pickDb = (e) => { setDb(e.target.value); setDbState(e.target.value); };
 
   return (
     <div className="relative min-h-full flex items-center justify-center bg-gray-100 dark:bg-slate-950 p-4 sm:p-6 overflow-hidden">
+      <button onClick={toggleTheme} aria-label={isDark ? "Switch to light theme" : "Switch to dark theme"}
+        title={isDark ? "Switch to light theme" : "Switch to dark theme"}
+        className="absolute right-3 top-3 z-10 inline-flex h-9 w-9 items-center justify-center rounded-lg bg-white/80 dark:bg-slate-800/80 text-gray-600 dark:text-gray-300 shadow hover:bg-white dark:hover:bg-slate-700">
+        {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+      </button>
       <div className="pointer-events-none absolute -top-32 -left-24 h-80 w-80 rounded-full bg-green-300/20 blur-3xl dark:bg-green-600/10" />
       <div className="pointer-events-none absolute -bottom-32 right-0 h-80 w-80 rounded-full bg-emerald-300/20 blur-3xl dark:bg-emerald-600/10" />
 

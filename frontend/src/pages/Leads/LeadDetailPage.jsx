@@ -134,7 +134,7 @@ export default function LeadDetailPage() {
 
   if (!lead) {
     return (
-      <div className="p-6 space-y-4">
+      <div className="p-4 sm:p-6 space-y-4">
         <Breadcrumb items={[{ label: "Leads", to: "/leads" }, { label: "Lead" }]} />
         <Alerts error={error} onClearError={() => setError("")} />
         {!error && <p className="text-sm text-gray-400">Loading…</p>}
@@ -191,7 +191,7 @@ export default function LeadDetailPage() {
   };
 
   return (
-    <div className="p-6 space-y-4">
+    <div className="p-4 sm:p-6 space-y-4">
       <Breadcrumb items={[{ label: "Leads", to: "/leads" }, { label: lead.leadNo }]} />
 
       <div className="flex flex-wrap items-start justify-between gap-4">
